@@ -66,8 +66,8 @@ export default async () => {
 
       const payload = {
         live: (Array.isArray(live) ? live : []).filter(isPsg).map(mapMatch),
-        upcoming: (Array.isArray(upcoming) ? upcoming : []).slice(0, 5).map(mapMatch),
-        recent: (Array.isArray(recent) ? recent : []).slice(0, 5).map(mapMatch),
+        upcoming: (Array.isArray(upcoming) ? upcoming : []).map(mapMatch),
+        recent: (Array.isArray(recent) ? recent : []).map(mapMatch),
         checkedAt: new Date().toISOString(),
         diagnostics: {
           upcomingCount: Array.isArray(upcoming) ? upcoming.length : -1,
