@@ -31,10 +31,8 @@ export default async () => {
         get(`https://api.sportsapi.app/v2/fixtures?date=${dateAt(offset)}&sport=padel&page=0`)
       );
 
-      const [live, menRaw, womenRaw, ...dailyFixtures] = await Promise.all([
+      const [live, ...dailyFixtures] = await Promise.all([
         get("https://api.sportsapi.app/v2/livescores?sport=padel"),
-        get("https://api.sportsapi.app/v2/rankings/padel-men"),
-        get("https://api.sportsapi.app/v2/rankings/padel-women"),
         ...fixtureRequests
       ]);
 
@@ -69,21 +67,9 @@ export default async () => {
         .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
       const liveMatches = (Array.isArray(live) ? live : []).map(mapMatch).filter(isTargetTournament);
 
-      const mapRanking = raw => {
-        const rows = Array.isArray(raw) ? raw : (Array.isArray(raw?.rows) ? raw.rows : []);
-        return rows.slice(0, 30).map(r => ({
-          position: r.position,
-          name: r.team?.name || r.name || "Joueur",
-          image: r.team?.image || r.image || null,
-          points: r.points ?? null,
-          previousPosition: r.previousPosition ?? null
-        }));
-      };
-
       return {
         live: liveMatches,
         matches,
-        rankings: { men: mapRanking(menRaw), women: mapRanking(womenRaw) },
         checkedAt: new Date().toISOString(),
         calendarDays: 7
       };
