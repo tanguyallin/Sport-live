@@ -4,16 +4,21 @@ const examples=[
  {sport:'f1',tag:'FORMULE 1',status:'À VENIR',left:'Prochain Grand Prix',right:'Programme',score:'—',detail:'Essais · Qualifications · Course',tv:'Diffuseur à confirmer'},
  {sport:'padel',tag:'PADEL · FEMMES',status:'EXEMPLE',left:'Paire C',right:'Paire D',score:'—',detail:'Premier Padel · Tableau féminin',tv:'Diffusion à confirmer'}
 ];
-const events=document.querySelector('#events');let filter='all';let psgMatches=[];let psgError='';
+const events=document.querySelector('#events');let filter='all';let psgLive=[];let psgUpcoming=[];let psgRecent=[];let psgError='';
 function render(){
  const rows=examples.filter(x=>filter==='all'||x.sport===filter);
  events.innerHTML=rows.map(x=>{
   if(x.sport==='psg'){
-   if(psgMatches.length){
-    return psgMatches.map(m=>`<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">DIRECT · ${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${m.homeScore ?? '—'} - ${m.awayScore ?? '—'}<small>${escapeHtml(m.league)}</small></div></div><div class="event-foot"><span>Score actualisé automatiquement<br><b>Dernière vérification : ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</b></span></div></article>`).join('');
-   }
-   const message=psgError ? 'Connexion aux scores indisponible' : 'Aucun match du PSG en direct actuellement';
-   return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">${psgError?'ERREUR API':'EN ATTENTE'}</span></div><div class="event-main"><div class="teams">Paris Saint-Germain</div><div class="score">—<small>${escapeHtml(message)}</small></div></div><div class="event-foot"><span>${psgError?escapeHtml(psgError):'Les scores apparaîtront automatiquement pendant un match.'}</span></div></article>`;
+   if(psgError) return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">ERREUR API</span></div><div class="event-main"><div class="teams">Paris Saint-Germain</div><div class="score">—<small>Connexion indisponible</small></div></div><div class="event-foot"><span>${escapeHtml(psgError)}</span></div></article>`;
+   const card=(m,label)=>`<article class="event"><div class="event-top"><span class="tag">${label}</span><span class="status">${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${m.homeScore ?? '—'} - ${m.awayScore ?? '—'}<small>${escapeHtml(m.league)}</small></div></div><div class="event-foot"><span>${m.startTime?new Date(m.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Horaire non communiqué'}</span></div></article>`;
+   const sections=[];
+   if(psgLive.length) sections.push(psgLive.map(m=>card(m,'PSG · EN DIRECT')).join(''));
+   if(psgUpcoming.length) sections.push('<p class="eyebrow">PROCHAIN MATCH</p>'+card(psgUpcoming[0],'PSG · À VENIR'));
+   if(psgRecent.length) sections.push('<p class="eyebrow">DERNIERS RÉSULTATS</p>'+psgRecent.slice(0,3).map(m=>card(m,'PSG · TERMINÉ')).join(''));
+   if(!sections.length) sections.push('<article class="event"><div class="event-top"><span class="tag">PARIS SAINT-GERMAIN</span><span class="status">À JOUR</span></div><div class="event-main"><div class="teams">Aucun match trouvé</div><div class="score">—<small>Le calendrier sera actualisé automatiquement.</small></div></div></article>');
+   return sections.join('');
+  }
+  return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">${psgError?'ERREUR API':'EN ATTENTE'}</span></div><div class="event-main"><div class="teams">Paris Saint-Germain</div><div class="score">—<small>${escapeHtml(message)}</small></div></div><div class="event-foot"><span>${psgError?escapeHtml(psgError):'Les scores apparaîtront automatiquement pendant un match.'}</span></div></article>`;
   }
   return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">${x.status}</span></div><div class="event-main"><div class="teams">${x.left}<br>${x.right}</div><div class="score">${x.score}<small>Pas de score connecté</small></div></div><div class="event-foot"><span>${x.detail}<br><b>${x.tv}</b></span><button class="add-event" data-title="${x.tag}: ${x.left} - ${x.right}">+ CALENDRIER</button></div></article>`;
  }).join('')||'<div class="empty">Aucun événement dans cette rubrique pour le moment.</div>';
@@ -25,9 +30,11 @@ async function loadPsgLive(){
   const response=await fetch('/.netlify/functions/psg-live',{cache:'no-store'});
   const result=await response.json();
   if(!response.ok) throw new Error(result.message||'Erreur de connexion');
-  psgMatches=Array.isArray(result.matches)?result.matches:[];
+  psgLive=Array.isArray(result.live)?result.live:[];
+  psgUpcoming=Array.isArray(result.upcoming)?result.upcoming:[];
+  psgRecent=Array.isArray(result.recent)?result.recent:[];
   psgError='';
- }catch(error){psgMatches=[];psgError=error.message||'Connexion impossible';}
+ }catch(error){psgLive=[];psgUpcoming=[];psgRecent=[];psgError=error.message||'Connexion impossible';}
  render();
 }
 
