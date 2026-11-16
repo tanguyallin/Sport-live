@@ -4,7 +4,7 @@ const examples=[
  {sport:'f1',tag:'FORMULE 1',status:'À VENIR',left:'Prochain Grand Prix',right:'Programme',score:'—',detail:'Essais · Qualifications · Course',tv:'Diffuseur à confirmer'},
 
 ];
-const events=document.querySelector('#events');let filter='all';let calendarFilter='all';let psgLive=[];let psgUpcoming=[];let psgRecent=[];let psgError='';let padelData=null;let padelError='';let padelView='live';let padelGender='men';
+const events=document.querySelector('#events');let filter='all';let calendarFilter='all';let psgLive=[];let psgUpcoming=[];let psgRecent=[];let psgError='';let padelData=null;let padelError='';let padelView='live';let padelGender='men';let f1Data=null;let f1Error='';let f1View='program';let f1StandingMode='drivers';
 function render(){
  if(filter==='calendar'){
   events.innerHTML=renderAnnualCalendar();
@@ -14,7 +14,7 @@ function render(){
  const rows=examples.filter(x=>filter==='all'||x.sport===filter);
  events.innerHTML=rows.map(x=>{
   if(x.sport==='padel') return renderPadel();
-  if(x.sport==='f1') return renderF1();
+  if(x.sport==='f1') return filter==='all'?renderF1Home():renderF1();
   if(x.sport==='psg'){
    if(psgError){
     return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">ERREUR API</span></div><div class="event-main"><div class="teams">Paris Saint-Germain</div><div class="score">—<small>Connexion indisponible</small></div></div><div class="event-foot"><span>${escapeHtml(psgError)}</span></div></article>`;
@@ -32,6 +32,8 @@ function render(){
  document.querySelectorAll('.add-event').forEach(b=>b.addEventListener('click',()=>downloadICS(b.dataset.title)));
  document.querySelectorAll('[data-padel-view]').forEach(b=>b.addEventListener('click',()=>{padelView=b.dataset.padelView;render()}));
  document.querySelectorAll('[data-padel-gender]').forEach(b=>b.addEventListener('click',()=>{padelGender=b.dataset.padelGender;render()}));
+ document.querySelectorAll('[data-f1-view]').forEach(b=>b.addEventListener('click',()=>{f1View=b.dataset.f1View;render()}));
+ document.querySelectorAll('[data-f1-standing]').forEach(b=>b.addEventListener('click',()=>{f1StandingMode=b.dataset.f1Standing;render()}));
 }
 
 const padelAnnualEvents=[
@@ -61,21 +63,21 @@ const padelAnnualEvents=[
  ['Mexico Major','2026-11-23','2026-11-29','Acapulco, Mexique','Major']
 ].map(([name,start,end,place,level])=>({sport:'padel',name,start,end,place,detail:level}));
 const f1AnnualEvents=[
- {name:'Las Vegas Grand Prix',start:'2026-11-19',end:'2026-11-21',place:'Las Vegas',sessions:[
+ {name:'Las Vegas Grand Prix',start:'2026-11-19',end:'2026-11-21',place:'Las Vegas',country:'États-Unis',flag:'🇺🇸',sessions:[
   {name:'Essais libres 1',date:'2026-11-20',time:'01:30'},
   {name:'Essais libres 2',date:'2026-11-20',time:'05:00'},
   {name:'Essais libres 3',date:'2026-11-21',time:'01:30'},
   {name:'Qualifications',date:'2026-11-21',time:'05:00'},
   {name:'Course',date:'2026-11-22',time:'05:00'}
  ]},
- {name:'Qatar Grand Prix',start:'2026-11-27',end:'2026-11-29',place:'Lusail',sessions:[
+ {name:'Qatar Grand Prix',start:'2026-11-27',end:'2026-11-29',place:'Lusail',country:'Qatar',flag:'🇶🇦',sessions:[
   {name:'Essais libres 1',date:'2026-11-27',time:'14:30'},
   {name:'Essais libres 2',date:'2026-11-27',time:'18:00'},
   {name:'Essais libres 3',date:'2026-11-28',time:'15:30'},
   {name:'Qualifications',date:'2026-11-28',time:'19:00'},
   {name:'Course',date:'2026-11-29',time:'17:00'}
  ]},
- {name:'Abu Dhabi Grand Prix',start:'2026-12-04',end:'2026-12-06',place:'Yas Marina',sessions:[
+ {name:'Abu Dhabi Grand Prix',start:'2026-12-04',end:'2026-12-06',place:'Yas Marina',country:'Émirats arabes unis',flag:'🇦🇪',sessions:[
   {name:'Essais libres 1',date:'2026-12-04',time:'10:30'},
   {name:'Essais libres 2',date:'2026-12-04',time:'14:00'},
   {name:'Essais libres 3',date:'2026-12-05',time:'11:30'},
@@ -83,6 +85,74 @@ const f1AnnualEvents=[
   {name:'Course',date:'2026-12-06',time:'14:00'}
  ]}
 ];
+
+const f1FallbackDrivers=[
+ ['Kimi Antonelli','Mercedes',390],['Max Verstappen','Red Bull Racing',279],['George Russell','Mercedes',262],['Lewis Hamilton','Ferrari',261],['Charles Leclerc','Ferrari',249],['Lando Norris','McLaren',246],['Oscar Piastri','McLaren',152],['Isack Hadjar','Red Bull Racing',122],['Liam Lawson','Racing Bulls',89],['Pierre Gasly','Alpine',42],['Arvid Lindblad','Racing Bulls',38],['Franco Colapinto','Alpine',27],['Oliver Bearman','Haas F1 Team',23],['Gabriel Bortoleto','Audi',14],['Nico Hulkenberg','Audi',14],['Esteban Ocon','Haas F1 Team',7],['Fernando Alonso','Aston Martin',7],['Carlos Sainz','Williams',7],['Alexander Albon','Williams',5],['Yuki Tsunoda','Racing Bulls',1],['Ryo Hirakawa','Haas F1 Team',1],['Lance Stroll','Aston Martin',0],['Valtteri Bottas','Cadillac',0],['Sergio Perez','Cadillac',0],['Rafael Câmara','Haas F1 Team',0]
+].map((d,i)=>({position:i+1,name:d[0],team:d[1],points:d[2],acronym:d[0].split(' ').map(x=>x[0]).join('').slice(0,3).toUpperCase(),photo:null,teamColour:'536273'}));
+const f1FallbackTeams=[['Mercedes',652],['Ferrari',510],['Red Bull Racing',415],['McLaren',398],['Racing Bulls',114],['Alpine',69],['Haas F1 Team',31],['Audi',28],['Williams',12],['Aston Martin',7],['Cadillac',0]].map((t,i)=>({position:i+1,name:t[0],points:t[1]}));
+function f1Flag(meeting){
+ if(meeting?.flag) return `<img class="f1-flag" src="${escapeHtml(meeting.flag)}" alt="" loading="lazy">`;
+ const code=String(meeting?.countryCode||'').toUpperCase();
+ const flags={USA:'🇺🇸',QAT:'🇶🇦',ARE:'🇦🇪',UAE:'🇦🇪',GBR:'🇬🇧',ITA:'🇮🇹',ESP:'🇪🇸',MEX:'🇲🇽',BRA:'🇧🇷',AUS:'🇦🇺',JPN:'🇯🇵',CHN:'🇨🇳',CAN:'🇨🇦',MON:'🇲🇨',NED:'🇳🇱',BEL:'🇧🇪',HUN:'🇭🇺',AUT:'🇦🇹',SGP:'🇸🇬',AZE:'🇦🇿',SAU:'🇸🇦'};
+ return flags[code]||meeting?.flagEmoji||'🏁';
+}
+function f1NextEvent(){
+ if(f1Data?.meeting) return {name:f1Data.meeting.name||f1Data.meeting.officialName,place:f1Data.meeting.location,country:f1Data.meeting.country,flag:f1Flag(f1Data.meeting),start:f1Data.meeting.start,end:f1Data.meeting.end};
+ const today=new Date().toISOString().slice(0,10);
+ const gp=f1AnnualEvents.find(e=>e.end>=today);
+ return gp?{...gp,flag:gp.flag}:null;
+}
+function renderF1Home(){
+ const gp=f1NextEvent();
+ if(!gp) return '<article class="event"><div class="event-top"><span class="tag">FORMULE 1</span><span class="status">SAISON TERMINÉE</span></div><div class="event-main"><div class="teams">Prochain Grand Prix à venir</div><div class="score">🏁</div></div></article>';
+ const date=gp.start?new Date(gp.start).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):'Dates à confirmer';
+ const end=gp.end?new Date(gp.end).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';
+ return `<article class="event f1-home-card"><div class="event-top"><span class="tag">FORMULE 1 · PROCHAIN GRAND PRIX</span><span class="status">À VENIR</span></div><div class="f1-home-main"><div><div class="f1-home-title">${escapeHtml(gp.name||'Grand Prix')}</div><div class="f1-home-place">${escapeHtml(gp.place||'')} · ${escapeHtml(gp.country||'')}</div><small>${date}${end?' – '+end:''}</small></div><div class="f1-home-flag">${gp.flag}</div></div></article>`;
+}
+function safeTeamColor(value){const c=String(value||'536273').replace('#','');return /^[0-9a-fA-F]{6}$/.test(c)?'#'+c:'#536273';}
+function f1Photo(driver){
+ return driver.photo? `<img class="f1-photo" src="${escapeHtml(driver.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<div class="f1-photo f1-photo-empty">${escapeHtml(driver.acronym||'F1')}</div>`;
+}
+function renderF1Standings(){
+ const drivers=f1Data?.drivers?.length?f1Data.drivers:f1FallbackDrivers;
+ const teams=f1Data?.teams?.length?f1Data.teams:f1FallbackTeams;
+ const switcher=`<div class="padel-gender"><button data-f1-standing="drivers" class="${f1StandingMode==='drivers'?'active':''}">PILOTES</button><button data-f1-standing="teams" class="${f1StandingMode==='teams'?'active':''}">CONSTRUCTEURS</button></div>`;
+ if(f1StandingMode==='teams') return switcher+`<div class="ranking-list f1-ranking-list">${teams.map(t=>`<div class="ranking-row f1-team-row"><b class="ranking-position">#${t.position??'—'}</b><span class="f1-team-mark"></span><span class="ranking-name">${escapeHtml(t.name)}</span><strong>${Number(t.points||0).toLocaleString('fr-FR')} pts</strong></div>`).join('')}</div><p class="data-note">Championnat du monde des constructeurs · Saison 2026</p>`;
+ return switcher+`<div class="ranking-list f1-ranking-list">${drivers.map(d=>`<div class="ranking-row f1-driver-row"><b class="ranking-position">#${d.position??'—'}</b>${f1Photo(d)}<span class="ranking-name"><b>${escapeHtml(d.name)}</b><small>${escapeHtml(d.team||'Écurie')}</small></span><strong>${Number(d.points||0).toLocaleString('fr-FR')} pts</strong></div>`).join('')}</div><p class="data-note">Championnat du monde des pilotes · Saison 2026</p>`;
+}
+function renderF1Grid(){
+ if(!f1Data?.qualifyingPassed) return '<div class="empty">La grille de départ sera disponible après les qualifications.</div>';
+ if(!f1Data.gridAvailable) return '<div class="empty">Qualifications terminées. La grille officielle est en attente de publication.</div>';
+ return `<div class="f1-grid-list">${f1Data.grid.map(d=>`<article class="f1-grid-row"><b class="f1-grid-position">${d.position}</b>${f1Photo(d)}<div class="f1-grid-driver"><b>${escapeHtml(d.name)}</b><small>${escapeHtml(d.team||'Écurie')}</small></div><span class="f1-grid-team" style="background:${safeTeamColor(d.teamColour)}"></span></article>`).join('')}</div><p class="data-note">Grille de départ · Données OpenF1 après publication officielle</p>`;
+}
+function renderF1Program(){
+ const gp=f1NextEvent();
+ if(!gp) return '<div class="empty">La saison est terminée. Le calendrier sera mis à jour à la prochaine publication officielle.</div>';
+ const sessions=f1Data?.sessions?.length?f1Data.sessions.filter(s=>Date.parse(s.end)>=Date.now()):[];
+ const staticGp=f1AnnualEvents.find(e=>e.name===gp.name)||f1AnnualEvents.find(e=>e.end>=(new Date().toISOString().slice(0,10)));
+ const sessionRows=sessions.length?sessions.map(s=>({name:s.name,start:s.start})):((staticGp?.sessions||[]).map(s=>({name:s.name,start:s.date+'T'+s.time+':00+01:00'})));
+ const weekend=gp.start&&gp.end?`${new Date(gp.start).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} – ${new Date(gp.end).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}`: 'Dates à confirmer';
+ const schedule=sessionRows.map(s=>{const d=new Date(s.start);return `<article class="annual-event"><div class="annual-date"><b>${d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</b><small>${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</small></div><div class="annual-info"><span>🏎️ FORMULE 1</span><b>${escapeHtml(s.name)}</b><small>Heure française</small></div></article>`;}).join('');
+ const later=f1AnnualEvents.filter(e=>e.end>=(new Date().toISOString().slice(0,10))&&e.name!==(staticGp?.name)).map(e=>`<article class="f1-next-card"><span>${e.flag}</span><div><b>${escapeHtml(e.name)}</b><small>${new Date(e.start+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${new Date(e.end+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} · ${escapeHtml(e.place)}</small></div></article>`).join('');
+ return `<article class="event"><div class="event-top"><span class="tag">PROCHAIN GRAND PRIX</span><span class="status">À VENIR</span></div><div class="f1-event-heading"><div class="f1-event-flag">${gp.flag}</div><div><h3>${escapeHtml(gp.name||'Grand Prix')}</h3><small>${escapeHtml(gp.place||'')} · ${escapeHtml(gp.country||'')}</small></div></div><div class="event-foot"><span>${weekend}</span></div></article><section class="padel-tournament"><header><span class="padel-tournament-kicker">PROGRAMME COMPLET · HEURE FRANÇAISE</span><h3>${escapeHtml(gp.name||'Grand Prix')}</h3><span class="padel-count">${sessionRows.some(s=>/sprint/i.test(s.name))?'Week-end Sprint':'Sans course Sprint'}</span></header>${schedule||'<div class="empty">Les horaires des séances seront affichés dès leur publication.</div>'}</section>${later?'<p class="eyebrow">GRANDS PRIX SUIVANTS</p>'+later:''}`;
+}
+function renderF1(){
+ const showGrid=!!f1Data?.qualifyingPassed;
+ if(f1View==='grid'&&!showGrid) f1View='program';
+ const tabs=[['program','PROGRAMME'],['standings','CLASSEMENT'],...(showGrid?[['grid','GRILLE DE DÉPART']]:[])];
+ let body=f1View==='standings'?renderF1Standings():f1View==='grid'?renderF1Grid():renderF1Program();
+ return `<div class="f1-tabs">${tabs.map(([id,label])=>`<button data-f1-view="${id}" class="${f1View===id?'active':''}">${label}</button>`).join('')}</div>${body}`+(f1Error?'<p class="data-note">Certaines données F1 sont momentanément indisponibles.</p>':'');
+}
+async function loadF1(){
+ try{
+  const response=await fetch('/.netlify/functions/f1-live',{cache:'no-store'});
+  const result=await response.json();
+  if(!response.ok) throw new Error(result.message||'Données F1 indisponibles');
+  f1Data=result;f1Error='';
+ }catch(error){f1Error=error.message||'Connexion F1 impossible';}
+ render();
+}
+
 function renderF1(){
  const today=new Date();const todayKey=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
  const next=f1AnnualEvents.find(gp=>gp.end>=todayKey);
@@ -94,7 +164,7 @@ function renderF1(){
 function renderAnnualCalendar(){
  const psgEvents=[...psgRecent,...psgUpcoming].filter((m,i,arr)=>arr.findIndex(x=>String(x.id)===String(m.id))===i).map(m=>({sport:'psg',name:`${m.home} – ${m.away}`,start:(m.startTime||'').slice(0,10),time:m.startTime,place:m.league||'PSG',detail:m.status,score:m.homeScore==null?'':`${m.homeScore}–${m.awayScore}`}));
  const now=new Date();const todayKey=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
- const f1SessionEvents=f1AnnualEvents.flatMap(gp=>gp.sessions.map(s=>({sport:'f1',name:gp.name+' — '+s.name,start:s.date,time:s.time,place:gp.place,detail:s.name})));
+ const f1SessionEvents=f1AnnualEvents.flatMap(gp=>gp.sessions.map(s=>({sport:'f1',name:gp.flag+' '+gp.name+' — '+s.name,start:s.date,time:s.time,place:gp.place,detail:s.name})));
  const all=[...psgEvents,...padelAnnualEvents,...f1SessionEvents].filter(e=>e.start&&e.start>=todayKey&&(e.end?e.end>=todayKey:true)).sort((a,b)=>a.start.localeCompare(b.start));
  const filtered=calendarFilter==='all'?all:all.filter(e=>e.sport===calendarFilter);
  const filters=[['all','TOUT'],['psg','PSG'],['padel','PADEL'],['f1','F1']];
@@ -183,4 +253,4 @@ function downloadICS(title){const start=new Date(Date.now()+86400000);start.setH
 document.querySelector('#calendarBtn').onclick=()=>downloadICS('SPORT LIVE - événement à compléter');document.querySelector('#navCalendar').onclick=()=>{filter='calendar';document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navCalendar').classList.add('selected');render();};
 document.querySelector('#notifyBtn').onclick=async()=>{if(!('Notification'in window)){toast('Notifications non prises en charge par ce navigateur.');return}if(!('serviceWorker'in navigator)){toast('Installe d’abord Sport Live sur l’écran d’accueil.');return}try{const p=await Notification.requestPermission();document.querySelector('#notifyState').textContent=p==='granted'?'Autorisation accordée':'Autorisation non accordée';toast(p==='granted'?'Autorisation accordée. Les alertes nécessitent encore un service push.':'Autorisation non accordée.')}catch(e){toast('Impossible d’activer les notifications.')}};
 document.querySelector('#installHint').onclick=()=>toast('Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.');document.querySelector('#navLive').onclick=()=>{filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navLive').classList.add('selected');document.querySelector('[data-sport="all"]').click();toast('Affichage de tous les sports. Les flux live restent à connecter.')};document.querySelector('#navNews').onclick=()=>{filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navNews').classList.add('selected');document.querySelector('.news-head').scrollIntoView({behavior:'smooth'});};
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));render();loadPsgLive();loadPadel();setInterval(loadPsgLive,300000);setInterval(loadPadel,600000);
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));render();loadPsgLive();loadPadel();loadF1();setInterval(loadPsgLive,300000);setInterval(loadPadel,600000);setInterval(loadF1,600000);
