@@ -32,7 +32,7 @@ function renderPadel(){
  const nav=`<div class="padel-tabs"><button data-padel-view="live" class="${padelView==='live'?'active':''}">EN DIRECT</button><button data-padel-view="schedule" class="${padelView==='schedule'?'active':''}">JOURNÉE PAR JOURNÉE</button><button data-padel-view="rankings" class="${padelView==='rankings'?'active':''}">CLASSEMENTS FIP</button></div>`;
  if(padelError) return nav+`<div class="empty">Connexion Padel indisponible : ${escapeHtml(padelError)}</div>`;
  if(!padelData) return nav+'<div class="empty">Chargement des tournois Premier Padel…</div>';
- const rowsFor = list => (list||[]).filter(m=>/\\bmajor\\b|\\bp1\\b|\\bp2\\b/i.test(String(m.league||m.tournament||'')));
+ const rowsFor = list => (list||[]).filter(m=>/\bmajor\b|\bp1\b|\bp2\b/i.test(String(m.league||m.tournament||'')));
  const matchCard=m=>{
   const setKeys=Object.keys(m.homeSets||{}).sort((a,b)=>Number(a)-Number(b));
   const sets=setKeys.map(k=>`${m.homeSets[k]}-${m.awaySets?.[k]??'—'}`).join('  ');
@@ -69,7 +69,7 @@ function renderPadel(){
  }else{
   const rows=padelData.rankings?.[padelGender]||[];
   body=`<div class="padel-gender"><button data-padel-gender="men" class="${padelGender==='men'?'active':''}">HOMMES</button><button data-padel-gender="women" class="${padelGender==='women'?'active':''}">FEMMES</button></div>`+
-   (rows.length?`<div class="ranking-list">${rows.map(r=>`<div class="ranking-row"><b>#${r.position??'—'}</b><span>${escapeHtml(r.name)}</span><strong>${r.points==null?'—':Number(r.points).toLocaleString('fr-FR')+' pts'}</strong></div>`).join('')}</div>`:'<div class="empty">Classement indisponible pour le moment.</div>');
+   (rows.length?`<div class="ranking-list">${rows.map(r=>`<div class="ranking-row"><b class="ranking-position">#${r.position??'—'}</b>${r.image?`<img class="ranking-photo" src="${escapeHtml(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:'<div class="ranking-photo ranking-photo-empty">👤</div>'}<span class="ranking-name">${escapeHtml(r.name)}</span><strong>${r.points==null?'—':Number(r.points).toLocaleString('fr-FR')+' pts'}</strong></div>`).join('')}</div>`:'<div class="empty">Classement indisponible pour le moment.</div>');
  }
  return nav+body+`<p class="data-note">Tournois affichés : Major · P1 · P2 | Actualisation toutes les 10 min</p>`;
 }
