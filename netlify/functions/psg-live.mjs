@@ -39,7 +39,7 @@ export default async () => {
     return Response.json({
       live: (Array.isArray(live) ? live : []).filter(isPsg).map(mapMatch),
       upcoming: (Array.isArray(upcoming) ? upcoming : []).slice(0, 5).map(mapMatch),
-      recent: (Array.isArray(recent) ? recent : []).filter(isPsg).slice(0, 5).map(mapMatch),
+      recent: (Array.isArray(recent) ? recent : []).slice(0, 5).map(mapMatch),
       checkedAt: new Date().toISOString()
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
