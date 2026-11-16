@@ -132,7 +132,10 @@ function renderPadel(){
   body=rows.length?tournamentGroups(rows):'<div class="empty">Aucun match Major, P1 ou P2 en direct actuellement.</div>';
  }else if(padelView==='schedule'){
   const rows=rowsFor(padelData.matches);
-  body=rows.length?tournamentGroups(rows):'<div class="empty">Aucun match Major, P1 ou P2 dans les journées disponibles.</div>';
+  const today=new Date().toISOString().slice(0,10);
+  const nextTournaments=padelAnnualEvents.filter(e=>e.end>=today);
+  const tournamentCalendar=nextTournaments.length?`<div class="padel-upcoming"><p class="eyebrow">PROCHAINS TOURNOIS</p>${nextTournaments.map(e=>`<article class="padel-upcoming-card"><div><b>${escapeHtml(e.name)}</b><small>${new Date(e.start+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${new Date(e.end+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} · ${escapeHtml(e.place)}</small></div><strong>${escapeHtml(e.detail)}</strong></article>`).join('')}</div>`:'';
+  body=tournamentCalendar+(rows.length?tournamentGroups(rows):'<div class="empty">Les tableaux et horaires détaillés seront affichés à leur publication.</div>');
  }else{
   const rows=padelData.rankings?.[padelGender]||[];
   body=`<div class="padel-gender"><button data-padel-gender="men" class="${padelGender==='men'?'active':''}">HOMMES</button><button data-padel-gender="women" class="${padelGender==='women'?'active':''}">FEMMES</button></div>`+
