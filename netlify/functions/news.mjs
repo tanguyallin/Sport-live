@@ -2,7 +2,6 @@ let cachedPayload=null;
 let cacheExpiresAt=0;
 let pendingRequest=null;
 const SOURCES=[
- {sport:"psg",name:"L'Équipe",url:"https://dwh.lequipe.fr/api/edito/rss?path=/",match:/paris.?sg|paris saint-germain|demb[eé]l[eé]|barcola|marquinhos|vitinha|dou[eé]|hakimi|don[nn]arumma|safonov|luis enrique/i},
  {sport:"psg",name:"RMC Sport",url:"https://rmcsport.bfmtv.com/rss/football/",match:/paris.?sg|paris saint-germain|demb[eé]l[eé]|barcola|marquinhos|vitinha|dou[eé]|hakimi|don[nn]arumma|safonov|luis enrique/i},
  {sport:"psg",name:"Maxifoot",url:"https://rss.maxifoot.com/football-general.xml",match:/paris.?sg|paris saint-germain|demb[eé]l[eé]|barcola|marquinhos|vitinha|dou[eé]|hakimi|don[nn]arumma|safonov|luis enrique/i},
  {sport:"padel",name:"Padel Magazine",url:"https://padelmagazine.fr/feed/",match:/./},
