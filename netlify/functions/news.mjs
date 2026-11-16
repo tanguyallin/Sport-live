@@ -4,7 +4,9 @@ let pendingRequest=null;
 const SOURCES=[
  {sport:"psg",name:"RMC Sport",url:"https://rmcsport.bfmtv.com/rss/football/",match:/paris.?sg|paris saint-germain|demb[eé]l[eé]|barcola|marquinhos|vitinha|dou[eé]|hakimi|don[nn]arumma|safonov|luis enrique/i},
  {sport:"psg",name:"Maxifoot",url:"https://rss.maxifoot.com/football-general.xml",match:/paris.?sg|paris saint-germain|demb[eé]l[eé]|barcola|marquinhos|vitinha|dou[eé]|hakimi|don[nn]arumma|safonov|luis enrique/i},
+ {sport:"psg",name:"L’Équipe",url:"https://dwh.lequipe.fr/api/edito/rss?path=/Football/",match:/paris.?sg|paris saint-germain|demb[eé]l[eé]|barcola|marquinhos|vitinha|dou[eé]|hakimi|don[nn]arumma|safonov|luis enrique/i},
  {sport:"padel",name:"Padel Magazine",url:"https://padelmagazine.fr/feed/",match:/./},
+ {sport:"f1",name:"L’Équipe",url:"https://dwh.lequipe.fr/api/edito/rss?path=/Formule-1/",match:/formule 1|\bf1\b|grand prix|pilote|écurie|verstappen|hamilton|leclerc|norris|antonelli|gasly|piastri|ferrari|mercedes|red bull|mclaren|alpine/i},
  {sport:"f1",name:"Motorsport.com",url:"https://fr.motorsport.com/rss/f1/news/",match:/formule 1|\bf1\b|grand prix|pilote|écurie|verstappen|hamilton|leclerc|norris|antonelli|gasly|piastri|ferrari|mercedes|red bull|mclaren|alpine/i},
  {sport:"f1",name:"Paddock GP",url:"https://www.paddock-gp.com/feed/",match:/formule 1|\bf1\b|grand prix|pilote|écurie|verstappen|hamilton|leclerc|norris|antonelli|gasly|piastri|ferrari|mercedes|red bull|mclaren|alpine/i}
 ];
