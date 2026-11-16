@@ -33,14 +33,15 @@ export default async () => {
       awayScore: match.awayScore?.current ?? null,
       status: match.status?.description || match.status?.type || "À venir",
       league: match.league?.name || "Football",
-      startTime: match.startTime || null
+      startTime: match.startTime || match.start_time || match.date || null
     });
 
     return Response.json({
       live: (Array.isArray(live) ? live : []).filter(isPsg).map(mapMatch),
       upcoming: (Array.isArray(upcoming) ? upcoming : []).slice(0, 5).map(mapMatch),
       recent: (Array.isArray(recent) ? recent : []).slice(0, 5).map(mapMatch),
-      checkedAt: new Date().toISOString()
+      checkedAt: new Date().toISOString(),
+      diagnostics: { upcomingCount: Array.isArray(upcoming) ? upcoming.length : -1, recentCount: Array.isArray(recent) ? recent.length : -1, liveCount: Array.isArray(live) ? live.length : -1, upcomingFirstStartTime: Array.isArray(upcoming) ? (upcoming[0]?.startTime || upcoming[0]?.start_time || upcoming[0]?.date || null) : null, recentFirstStartTime: Array.isArray(recent) ? (recent[0]?.startTime || recent[0]?.start_time || recent[0]?.date || null) : null }
     }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return Response.json({ error: "sportsapi_error", message: error.message || "Erreur SportsAPI." }, { status: 502 });
