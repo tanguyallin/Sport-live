@@ -42,11 +42,14 @@ export default async () => {
         throw new Error("Impossible de trouver le club Paris Saint-Germain dans SportsAPI.");
       }
 
-      const [upcoming, recent, live] = await Promise.all([
-        get(`https://api.sportsapi.app/v2/teams/${team.id}/fixtures?type=upcoming&page=0`),
+      const [upcomingPages, recent, live] = await Promise.all([
+        Promise.all([0, 1].map(page =>
+          get(`https://api.sportsapi.app/v2/teams/${team.id}/fixtures?type=upcoming&page=${page}`)
+        )),
         get(`https://api.sportsapi.app/v2/teams/${team.id}/fixtures?type=recent&page=0`),
         get("https://api.sportsapi.app/v2/livescores?sport=football")
       ]);
+      const upcoming = upcomingPages.flat();
 
       const isPsg = match =>
         [match.home?.name, match.away?.name].some(name =>
