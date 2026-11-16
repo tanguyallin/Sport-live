@@ -56,7 +56,7 @@ export default async () => {
     for (const m of [...(Array.isArray(today) ? today : []), ...(Array.isArray(tomorrow) ? tomorrow : []), ...(Array.isArray(live) ? live : [])]) {
       if (m?.id != null) byId.set(m.id, mapMatch(m));
     }
-    const isTargetTournament = m => /\\bmajor\\b|\\bp1\\b|\\bp2\\b/i.test(String(m.league || ""));
+    const isTargetTournament = m => /\bmajor\b|\bp1\b|\bp2\b/i.test(String(m.league || ""));
     const matches = [...byId.values()].filter(isTargetTournament).sort((a,b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
     const liveMatches = (Array.isArray(live) ? live : []).map(mapMatch).filter(isTargetTournament);
     const mapRanking = rows => (Array.isArray(rows) ? rows : []).slice(0, 20).map(r => ({
