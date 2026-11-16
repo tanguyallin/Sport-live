@@ -13,7 +13,7 @@ function render(){
  }
  const rows=examples.filter(x=>filter==='all'||x.sport===filter);
  events.innerHTML=rows.map(x=>{
-  if(x.sport==='padel') return renderPadel();
+  if(x.sport==='padel') return renderPadel();\n  if(x.sport==='f1') return renderF1();
   if(x.sport==='psg'){
    if(psgError){
     return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">ERREUR API</span></div><div class="event-main"><div class="teams">Paris Saint-Germain</div><div class="score">—<small>Connexion indisponible</small></div></div><div class="event-foot"><span>${escapeHtml(psgError)}</span></div></article>`;
@@ -60,40 +60,46 @@ const padelAnnualEvents=[
  ['Mexico Major','2026-11-23','2026-11-29','Acapulco, Mexique','Major']
 ].map(([name,start,end,place,level])=>({sport:'padel',name,start,end,place,detail:level}));
 const f1AnnualEvents=[
- ['Australian Grand Prix','2026-03-06','2026-03-08','Melbourne'],
- ['Chinese Grand Prix','2026-03-13','2026-03-15','Shanghai'],
- ['Japanese Grand Prix','2026-03-27','2026-03-29','Suzuka'],
- ['Miami Grand Prix','2026-05-01','2026-05-03','Miami'],
- ['Canadian Grand Prix','2026-05-22','2026-05-24','Montréal'],
- ['Monaco Grand Prix','2026-06-05','2026-06-07','Monaco'],
- ['Barcelona-Catalunya Grand Prix','2026-06-12','2026-06-14','Barcelone'],
- ['Austrian Grand Prix','2026-06-26','2026-06-28','Spielberg'],
- ['British Grand Prix','2026-07-03','2026-07-05','Silverstone'],
- ['Belgian Grand Prix','2026-07-17','2026-07-19','Spa'],
- ['Hungarian Grand Prix','2026-07-24','2026-07-26','Budapest'],
- ['Dutch Grand Prix','2026-08-21','2026-08-23','Zandvoort'],
- ['Italian Grand Prix','2026-09-04','2026-09-06','Monza'],
- ['Spanish Grand Prix','2026-09-11','2026-09-13','Madrid'],
- ['Azerbaijan Grand Prix','2026-09-24','2026-09-26','Bakou'],
- ['Bahrain Grand Prix','2026-10-02','2026-10-04','Sakhir'],
- ['Singapore Grand Prix','2026-10-09','2026-10-11','Singapour'],
- ['United States Grand Prix','2026-10-23','2026-10-25','Austin'],
- ['Mexico City Grand Prix','2026-10-30','2026-11-01','Mexico'],
- ['São Paulo Grand Prix','2026-11-06','2026-11-08','São Paulo'],
- ['Las Vegas Grand Prix','2026-11-19','2026-11-21','Las Vegas'],
- ['Qatar Grand Prix','2026-11-27','2026-11-29','Lusail'],
- ['Abu Dhabi Grand Prix','2026-12-04','2026-12-06','Abu Dhabi']
-].map(([name,start,end,place])=>({sport:'f1',name,start,end,place,detail:'Grand Prix'}));
+ {name:'Las Vegas Grand Prix',start:'2026-11-19',end:'2026-11-21',place:'Las Vegas',sessions:[
+  {name:'Essais libres 1',date:'2026-11-20',time:'01:30'},
+  {name:'Essais libres 2',date:'2026-11-20',time:'05:00'},
+  {name:'Essais libres 3',date:'2026-11-21',time:'01:30'},
+  {name:'Qualifications',date:'2026-11-21',time:'05:00'},
+  {name:'Course',date:'2026-11-22',time:'05:00'}
+ ]},
+ {name:'Qatar Grand Prix',start:'2026-11-27',end:'2026-11-29',place:'Lusail',sessions:[
+  {name:'Essais libres 1',date:'2026-11-27',time:'14:30'},
+  {name:'Essais libres 2',date:'2026-11-27',time:'18:00'},
+  {name:'Essais libres 3',date:'2026-11-28',time:'15:30'},
+  {name:'Qualifications',date:'2026-11-28',time:'19:00'},
+  {name:'Course',date:'2026-11-29',time:'17:00'}
+ ]},
+ {name:'Abu Dhabi Grand Prix',start:'2026-12-04',end:'2026-12-06',place:'Yas Marina',sessions:[
+  {name:'Essais libres 1',date:'2026-12-04',time:'10:30'},
+  {name:'Essais libres 2',date:'2026-12-04',time:'14:00'},
+  {name:'Essais libres 3',date:'2026-12-05',time:'11:30'},
+  {name:'Qualifications',date:'2026-12-05',time:'15:00'},
+  {name:'Course',date:'2026-12-06',time:'14:00'}
+ ]}
+];
+function renderF1(){
+ const today=new Date();const todayKey=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+ const next=f1AnnualEvents.find(gp=>gp.end>=todayKey);
+ if(!next) return '<div class="empty">La saison 2026 est terminée. Le calendrier 2027 sera ajouté dès sa publication.</div>';
+ const weekend=`${new Date(next.start+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} – ${new Date(next.end+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}`;
+ return `<article class="event"><div class="event-top"><span class="tag">FORMULE 1 · PROCHAIN GRAND PRIX</span><span class="status">À VENIR</span></div><div class="event-main"><div class="teams">${escapeHtml(next.name)}</div><div class="score">🏎️<small>${escapeHtml(next.place)}</small></div></div><div class="event-foot"><span>${weekend}</span></div></article><section class="padel-tournament"><header><span class="padel-tournament-kicker">HORAIRES FRANÇAISES</span><h3>${escapeHtml(next.name)}</h3><span class="padel-count">${next.sessions.some(s=>s.name==='Sprint')?'Week-end Sprint':'Sans course Sprint'}</span></header>${next.sessions.map(s=>`<article class="annual-event"><div class="annual-date"><b>${new Date(s.date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</b><small>${escapeHtml(s.time)}</small></div><div class="annual-info"><span>🏎️ F1</span><b>${escapeHtml(s.name)}</b><small>${escapeHtml(next.place)} · Heure de Paris</small></div></article>`).join('')}</section>${f1AnnualEvents.filter(gp=>gp!==next&&gp.end>=todayKey).map(gp=>`<article class="event"><div class="event-top"><span class="tag">PROCHAINEMENT</span><span class="status">${gp.sessions.some(s=>s.name==='Sprint')?'SPRINT':'GRAND PRIX'}</span></div><div class="event-main"><div class="teams">${escapeHtml(gp.name)}</div><div class="score">🏎️<small>${escapeHtml(gp.place)}</small></div></div><div class="event-foot"><span>${new Date(gp.start+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} – ${new Date(gp.end+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</span></div></article>`).join('')}`;
+}
+
 function renderAnnualCalendar(){
  const psgEvents=[...psgRecent,...psgUpcoming].filter((m,i,arr)=>arr.findIndex(x=>String(x.id)===String(m.id))===i).map(m=>({sport:'psg',name:`${m.home} – ${m.away}`,start:(m.startTime||'').slice(0,10),time:m.startTime,place:m.league||'PSG',detail:m.status,score:m.homeScore==null?'':`${m.homeScore}–${m.awayScore}`}));
  const now=new Date();const todayKey=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
- const all=[...psgEvents,...padelAnnualEvents,...f1AnnualEvents].filter(e=>e.start&&e.start>=todayKey&&(e.end?e.end>=todayKey:true)).sort((a,b)=>a.start.localeCompare(b.start));
+ const f1SessionEvents=f1AnnualEvents.flatMap(gp=>gp.sessions.map(s=>({sport:'f1',name:gp.name+' — '+s.name,start:s.date,time:s.time,place:gp.place,detail:s.name})));\n const all=[...psgEvents,...padelAnnualEvents,...f1SessionEvents].filter(e=>e.start&&e.start>=todayKey&&(e.end?e.end>=todayKey:true)).sort((a,b)=>a.start.localeCompare(b.start));
  const filtered=calendarFilter==='all'?all:all.filter(e=>e.sport===calendarFilter);
  const filters=[['all','TOUT'],['psg','PSG'],['padel','PADEL'],['f1','F1']];
  const monthNames=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
  const grouped=new Map();
  for(const e of filtered){const d=new Date(e.start+'T12:00:00');const key=monthNames[d.getMonth()];if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(e);}
- const blocks=[...grouped.entries()].map(([month,items])=>`<section class="annual-month"><h3>${month} 2026</h3>${items.map(e=>{const d=new Date(e.start+'T12:00:00');const date=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});const end=e.end&&e.end!==e.start?' – '+new Date(e.end+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):'';const label=e.sport==='psg'?'⚽ PSG':e.sport==='padel'?'🎾 PADEL':'🏎️ F1';const sub=e.sport==='psg'?[e.place,e.time?new Date(e.time).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'',e.score].filter(Boolean).join(' · '):[e.place,e.detail].filter(Boolean).join(' · ');return `<article class="annual-event"><div class="annual-date"><b>${date}</b><small>${end}</small></div><div class="annual-info"><span>${label}</span><b>${escapeHtml(e.name)}</b><small>${escapeHtml(sub)}</small></div></article>`}).join('')}</section>`).join('');
+ const blocks=[...grouped.entries()].map(([month,items])=>`<section class="annual-month"><h3>${month} 2026</h3>${items.map(e=>{const d=new Date(e.start+'T12:00:00');const date=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});const end=e.end&&e.end!==e.start?' – '+new Date(e.end+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):'';const label=e.sport==='psg'?'⚽ PSG':e.sport==='padel'?'🎾 PADEL':'🏎️ F1';const sub=e.sport==='psg'?[e.place,e.time?new Date(e.time).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'',e.score].filter(Boolean).join(' · '):[e.place,e.detail,e.time].filter(Boolean).join(' · ');return `<article class="annual-event"><div class="annual-date"><b>${date}</b><small>${end}</small></div><div class="annual-info"><span>${label}</span><b>${escapeHtml(e.name)}</b><small>${escapeHtml(sub)}</small></div></article>`}).join('')}</section>`).join('');
  return `<div class="calendar-filters">${filters.map(([id,label])=>`<button data-calendar-filter="${id}" class="${calendarFilter===id?'active':''}">${label}</button>`).join('')}</div>${blocks||'<div class="empty">Aucune date disponible pour ce filtre.</div>'}<p class="data-note">Les matchs du PSG proviennent du flux de résultats. Le calendrier Padel et F1 correspond au programme 2026 publié.</p>`;
 }
 function renderPadel(){
