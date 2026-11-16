@@ -27,9 +27,8 @@ export default async () => {
       d.setUTCDate(d.getUTCDate() + offset);
       return d.toISOString().slice(0, 10);
     };
-    const [live, yesterday, today, tomorrow, men, women] = await Promise.all([
+    const [live, today, tomorrow, men, women] = await Promise.all([
       get("https://api.sportsapi.app/v2/livescores?sport=padel"),
-      get(`https://api.sportsapi.app/v2/fixtures?date=${date(-1)}&sport=padel&page=0`),
       get(`https://api.sportsapi.app/v2/fixtures?date=${date(0)}&sport=padel&page=0`),
       get(`https://api.sportsapi.app/v2/fixtures?date=${date(1)}&sport=padel&page=0`),
       get("https://api.sportsapi.app/v2/rankings/padel-men"),
@@ -53,7 +52,7 @@ export default async () => {
       startTime: m.startTime || null
     });
     const byId = new Map();
-    for (const m of [...(Array.isArray(yesterday) ? yesterday : []), ...(Array.isArray(today) ? today : []), ...(Array.isArray(tomorrow) ? tomorrow : []), ...(Array.isArray(live) ? live : [])]) {
+    for (const m of [...(Array.isArray(today) ? today : []), ...(Array.isArray(tomorrow) ? tomorrow : []), ...(Array.isArray(live) ? live : [])]) {
       if (m?.id != null) byId.set(m.id, mapMatch(m));
     }
     const matches = [...byId.values()].sort((a,b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
