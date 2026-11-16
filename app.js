@@ -29,34 +29,49 @@ function render(){
 }
 
 function renderPadel(){
- const nav=`<div class="padel-tabs"><button data-padel-view="live" class="${padelView==='live'?'active':''}">EN DIRECT</button><button data-padel-view="schedule" class="${padelView==='schedule'?'active':''}">PROGRAMME & RÉSULTATS</button><button data-padel-view="rankings" class="${padelView==='rankings'?'active':''}">CLASSEMENTS FIP</button></div>`;
+ const nav=`<div class="padel-tabs"><button data-padel-view="live" class="${padelView==='live'?'active':''}">EN DIRECT</button><button data-padel-view="schedule" class="${padelView==='schedule'?'active':''}">JOURNÉE PAR JOURNÉE</button><button data-padel-view="rankings" class="${padelView==='rankings'?'active':''}">CLASSEMENTS FIP</button></div>`;
  if(padelError) return nav+`<div class="empty">Connexion Padel indisponible : ${escapeHtml(padelError)}</div>`;
- if(!padelData) return nav+'<div class="empty">Chargement des données Premier Padel…</div>';
+ if(!padelData) return nav+'<div class="empty">Chargement des tournois Premier Padel…</div>';
+ const rowsFor = list => (list||[]).filter(m=>/\\bmajor\\b|\\bp1\\b|\\bp2\\b/i.test(String(m.league||m.tournament||'')));
  const matchCard=m=>{
-  const sets=Object.keys(m.homeSets||{}).sort().map(k=>`${m.homeSets[k]}-${m.awaySets?.[k]??'—'}`).join('  ');
+  const setKeys=Object.keys(m.homeSets||{}).sort((a,b)=>Number(a)-Number(b));
+  const sets=setKeys.map(k=>`${m.homeSets[k]}-${m.awaySets?.[k]??'—'}`).join('  ');
   const score=m.homeScore==null?'—':`${m.homeScore} - ${m.awayScore??'—'}`;
-  const time=m.startTime?new Date(m.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Horaire non communiqué';
-  return `<article class="event"><div class="event-top"><span class="tag">${escapeHtml(m.league)}${m.gender?' · '+escapeHtml(m.gender):''}</span><span class="status">${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${score}<small>${sets||'Score par set non disponible'}</small></div></div><div class="event-foot"><span>${time}</span></div></article>`;
+  const time=m.startTime?new Date(m.startTime).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'Horaire à confirmer';
+  return `<article class="padel-match"><div class="padel-match-pairs"><div><span>${escapeHtml(m.home)}</span><span>${escapeHtml(m.away)}</span></div><div class="padel-match-score"><b>${score}</b><small>${sets||escapeHtml(m.status)}</small></div></div><div class="padel-match-time">${time} · ${escapeHtml(m.status)}</div></article>`;
+ };
+ const tournamentGroups = list => {
+  const tournaments=new Map();
+  for(const m of list){
+   const name=m.tournament||m.league||'Tournoi';
+   if(!tournaments.has(name)) tournaments.set(name,[]);
+   tournaments.get(name).push(m);
+  }
+  return [...tournaments.entries()].sort((a,b)=>a[0].localeCompare(b[0],'fr')).map(([name,matches])=>{
+   const days=new Map();
+   for(const m of matches){
+    const d=m.startTime?new Date(m.startTime):null;
+    const key=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}):'Date à confirmer';
+    if(!days.has(key)) days.set(key,[]);
+    days.get(key).push(m);
+   }
+   const dayBlocks=[...days.entries()].map(([day,dayMatches])=>`<section class="padel-day"><h4>${escapeHtml(day)}</h4>${dayMatches.sort((a,b)=>String(a.startTime||'').localeCompare(String(b.startTime||''))).map(matchCard).join('')}</section>`).join('');
+   return `<section class="padel-tournament"><header><span class="padel-tournament-kicker">PREMIER PADEL</span><h3>${escapeHtml(name)}</h3><span class="padel-count">${matches.length} match${matches.length>1?'s':''}</span></header>${dayBlocks}</section>`;
+  }).join('');
  };
  let body='';
  if(padelView==='live'){
-  const rows=padelData.live||[];
-  body=rows.length?rows.map(matchCard).join(''):'<div class="empty">Aucun match en direct actuellement. Les scores apparaîtront ici dès le début des rencontres.</div>';
+  const rows=rowsFor(padelData.live);
+  body=rows.length?tournamentGroups(rows):'<div class="empty">Aucun match Major, P1 ou P2 en direct actuellement.</div>';
  }else if(padelView==='schedule'){
-  const rows=padelData.matches||[];
-  const live=rows.filter(m=>m.statusType==='inprogress'||m.statusType==='break');
-  const upcoming=rows.filter(m=>m.statusType==='scheduled'||m.statusType==='notstarted'||m.statusType==='created');
-  const finished=rows.filter(m=>m.statusType==='finished');
-  body=(live.length?'<p class="eyebrow">EN COURS</p>'+live.map(matchCard).join(''):'')+
-   (upcoming.length?'<p class="eyebrow">À VENIR</p>'+upcoming.map(matchCard).join(''):'')+
-   (finished.length?'<p class="eyebrow">DERNIERS RÉSULTATS</p>'+finished.slice(-8).reverse().map(matchCard).join(''):'')+
-   (!live.length&&!upcoming.length&&!finished.length?'<div class="empty">Aucun match trouvé sur les trois jours consultés.</div>':'');
+  const rows=rowsFor(padelData.matches);
+  body=rows.length?tournamentGroups(rows):'<div class="empty">Aucun match Major, P1 ou P2 dans les journées disponibles.</div>';
  }else{
   const rows=padelData.rankings?.[padelGender]||[];
   body=`<div class="padel-gender"><button data-padel-gender="men" class="${padelGender==='men'?'active':''}">HOMMES</button><button data-padel-gender="women" class="${padelGender==='women'?'active':''}">FEMMES</button></div>`+
    (rows.length?`<div class="ranking-list">${rows.map(r=>`<div class="ranking-row"><b>#${r.position??'—'}</b><span>${escapeHtml(r.name)}</span><strong>${r.points==null?'—':Number(r.points).toLocaleString('fr-FR')+' pts'}</strong></div>`).join('')}</div>`:'<div class="empty">Classement indisponible pour le moment.</div>');
  }
- return nav+body+`<p class="data-note">Données SportsAPI · ${padelData.checkedAt?new Date(padelData.checkedAt).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):''} · Actualisation toutes les 10 min</p>`;
+ return nav+body+`<p class="data-note">Tournois affichés : Major · P1 · P2 | Actualisation toutes les 10 min</p>`;
 }
 async function loadPadel(){
  try{
