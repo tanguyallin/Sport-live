@@ -47,3 +47,11 @@
 .annual-info span{font-size:8px;font-weight:900;letter-spacing:.7px;color:var(--green)}
 .annual-info>b{font-size:11px;line-height:1.25}
 .annual-info small{font-size:9px;color:var(--muted)}
+
+.padel-upcoming{margin:12px 0 18px}
+.padel-upcoming>.eyebrow{margin-bottom:8px}
+.padel-upcoming-card{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:7px}
+.padel-upcoming-card>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.padel-upcoming-card b{font-size:12px}
+.padel-upcoming-card small{font-size:9px;color:var(--muted)}
+.padel-upcoming-card>strong{font-size:9px;color:var(--green);white-space:nowrap}
