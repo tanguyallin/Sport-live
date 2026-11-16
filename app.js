@@ -13,7 +13,8 @@ function render(){
  }
  const rows=examples.filter(x=>filter==='all'||x.sport===filter);
  events.innerHTML=rows.map(x=>{
-  if(x.sport==='padel') return renderPadel();\n  if(x.sport==='f1') return renderF1();
+  if(x.sport==='padel') return renderPadel();
+  if(x.sport==='f1') return renderF1();
   if(x.sport==='psg'){
    if(psgError){
     return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">ERREUR API</span></div><div class="event-main"><div class="teams">Paris Saint-Germain</div><div class="score">—<small>Connexion indisponible</small></div></div><div class="event-foot"><span>${escapeHtml(psgError)}</span></div></article>`;
