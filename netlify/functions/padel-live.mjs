@@ -47,7 +47,8 @@ export default async () => {
       awaySets: m.awayScore?.periods || {},
       status: m.status?.description || m.status?.type || "Programmé",
       statusType: m.status?.type || "scheduled",
-      league: m.league?.name || "Premier Padel / FIP",
+      league: m.league?.name || "",
+      tournament: m.league?.name || "Tournoi non renseigné",
       gender: m.league?.gender || m.home?.gender || null,
       startTime: m.startTime || null
     });
@@ -55,7 +56,9 @@ export default async () => {
     for (const m of [...(Array.isArray(today) ? today : []), ...(Array.isArray(tomorrow) ? tomorrow : []), ...(Array.isArray(live) ? live : [])]) {
       if (m?.id != null) byId.set(m.id, mapMatch(m));
     }
-    const matches = [...byId.values()].sort((a,b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
+    const isTargetTournament = m => /\\bmajor\\b|\\bp1\\b|\\bp2\\b/i.test(String(m.league || ""));
+    const matches = [...byId.values()].filter(isTargetTournament).sort((a,b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
+    const liveMatches = (Array.isArray(live) ? live : []).map(mapMatch).filter(isTargetTournament);
     const mapRanking = rows => (Array.isArray(rows) ? rows : []).slice(0, 20).map(r => ({
       position: r.position,
       name: r.team?.name || "Joueur",
@@ -64,7 +67,7 @@ export default async () => {
       previousPosition: r.previousPosition ?? null
     }));
     return {
-      live: (Array.isArray(live) ? live : []).map(mapMatch),
+      live: liveMatches,
       matches,
       rankings: { men: mapRanking(men), women: mapRanking(women) },
       checkedAt: new Date().toISOString()
