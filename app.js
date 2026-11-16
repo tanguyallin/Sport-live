@@ -4,7 +4,7 @@ const examples=[
  {sport:'f1',tag:'FORMULE 1',status:'À VENIR',left:'Prochain Grand Prix',right:'Programme',score:'—',detail:'Essais · Qualifications · Course',tv:'Diffuseur à confirmer'},
 
 ];
-const events=document.querySelector('#events');let filter='all';let calendarFilter='all';let psgLive=[];let psgUpcoming=[];let psgRecent=[];let psgError='';let padelData=null;let padelError='';let padelView='live';let padelGender='men';let padelRankings=null;let padelRankingError='';let padelRankingLoading=false;let f1Data=null;let f1Error='';let f1View='program';let f1StandingMode='drivers';
+const events=document.querySelector('#events');let filter='all';let calendarFilter='all';let psgLive=[];let psgUpcoming=[];let psgRecent=[];let psgError='';let psgCompetition='all';let psgStandings=null;let psgStandingsError='';let psgStandingsLoading=false;let padelData=null;let padelError='';let padelView='live';let padelGender='men';let padelRankings=null;let padelRankingError='';let padelRankingLoading=false;let f1Data=null;let f1Error='';let f1View='program';let f1StandingMode='drivers';
 function render(){
  if(filter==='calendar'){
   events.innerHTML=renderAnnualCalendar();
@@ -16,21 +16,34 @@ function render(){
   if(x.sport==='padel') return renderPadel();
   if(x.sport==='f1') return filter==='all'?renderF1Home():renderF1();
   if(x.sport==='psg'){
-   if(psgError){
-    return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">ERREUR API</span></div><div class="event-main"><div class="teams">Paris Saint-Germain</div><div class="score">—<small>Connexion indisponible</small></div></div><div class="event-foot"><span>${escapeHtml(psgError)}</span></div></article>`;
+   const tabs=[['all','TOUS'],['ligue1','LIGUE 1'],['ucl','LIGUE DES CHAMPIONS'],['cdf','COUPE DE FRANCE']];
+   const nav=`<div class="f1-tabs psg-competition-tabs">${tabs.map(([id,label])=>`<button data-psg-competition="${id}" class="${psgCompetition===id?'active':''}">${label}</button>`).join('')}</div>`;
+   const all=[...psgLive,...psgUpcoming,...psgRecent].filter((m,i,a)=>a.findIndex(v=>String(v.id)===String(m.id))===i);
+   const matches=psgCompetition==='all'?all:all.filter(m=>{
+    const league=String(m.league||'').toLowerCase();
+    if(psgCompetition==='ligue1')return /ligue 1|ligue 1 mcdonald/i.test(league);
+    if(psgCompetition==='ucl')return /champions league|ligue des champions|uefa champions/i.test(league);
+    return /coupe de france|french cup/i.test(league);
+   });
+   const card=m=>`<article class="event"><div class="event-top"><span class="tag">${escapeHtml(m.league||'PSG')}</span><span class="status">${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${m.homeScore ?? '—'} - ${m.awayScore ?? '—'}<small>${escapeHtml(m.round||m.league||'')}</small></div></div><div class="event-foot"><span>${m.startTime?new Date(m.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Horaire non communiqué'}</span></div></article>`;
+   let body='';
+   if(psgCompetition==='ligue1'||psgCompetition==='ucl'){
+    const table=psgStandings?.[psgCompetition];
+    body=table?.rows?.length?`<section class="padel-tournament psg-standings"><header><span class="padel-tournament-kicker">CLASSEMENT · SAISON 2026/27</span><h3>${escapeHtml(table.name)}</h3></header><div class="psg-table-wrap" style="overflow-x:auto"><table class="psg-table" style="width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px"><thead><tr><th>#</th><th style="text-align:left">ÉQUIPE</th><th>J</th><th>G</th><th>N</th><th>P</th><th>BP</th><th>BC</th><th>+/-</th><th>PTS</th></tr></thead><tbody>${table.rows.map(r=>`<tr class="${/paris.?sg|paris saint-germain/i.test(r.team)?'psg-highlight':''}" style="${/paris.?sg|paris saint-germain/i.test(r.team)?'font-weight:800;background:rgba(40,100,210,.12)':''}"><td style="padding:9px 6px">${r.position}</td><td style="text-align:left;padding:9px 6px">${r.image?`<img src="${escapeHtml(r.image)}" alt="" loading="lazy" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px">`:''}${escapeHtml(r.team)}</td><td>${r.played??'—'}</td><td>${r.wins??'—'}</td><td>${r.draws??'—'}</td><td>${r.losses??'—'}</td><td>${r.for??'—'}</td><td>${r.against??'—'}</td><td>${r.diff==null?'—':(r.diff>0?'+':'')+r.diff}</td><td><b>${r.points??'—'}</b></td></tr>`).join('')}</tbody></table></div><a class="psg-source-link" style="display:inline-block;margin-top:12px" href="${table.sourceUrl}" target="_blank" rel="noopener">Voir aussi sur L’Équipe ↗</a></section>`:
+     psgStandingsLoading?'<div class="empty">Chargement du classement…</div>':`<div class="empty">${escapeHtml(psgStandingsError||'Classement pas encore disponible.')}</div>`;
+   }else if(psgCompetition==='cdf'){
+    body=`<section class="padel-tournament"><header><span class="padel-tournament-kicker">COMPÉTITION À ÉLIMINATION DIRECTE</span><h3>Coupe de France</h3><span class="padel-count">Pas de classement général</span></header><a class="psg-source-link" href="https://www.lequipe.fr/Football/Coupe-de-France/" target="_blank" rel="noopener">Calendrier et résultats sur L’Équipe ↗</a></section>`;
    }
-   const card=(m,label)=>`<article class="event"><div class="event-top"><span class="tag">${label}</span><span class="status">${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${m.homeScore ?? '—'} - ${m.awayScore ?? '—'}<small>${escapeHtml(m.league)}</small></div></div><div class="event-foot"><span>${m.startTime?new Date(m.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Horaire non communiqué'}</span></div></article>`;
-   const sections=[];
-   if(psgLive.length) sections.push(psgLive.map(m=>card(m,'PSG · EN DIRECT')).join(''));
-   if(psgUpcoming.length) sections.push('<p class="eyebrow">PROCHAIN MATCH</p>'+card(psgUpcoming[0],'PSG · À VENIR'));
-   if(psgRecent.length) sections.push('<p class="eyebrow">DERNIERS RÉSULTATS</p>'+psgRecent.slice(0,3).map(m=>card(m,'PSG · TERMINÉ')).join(''));
-   if(!sections.length) sections.push('<article class="event"><div class="event-top"><span class="tag">PARIS SAINT-GERMAIN</span><span class="status">À JOUR</span></div><div class="event-main"><div class="teams">Aucun match trouvé</div><div class="score">—<small>Le calendrier sera actualisé automatiquement.</small></div></div></article>');
-   return sections.join('');
+   if(matches.length)body+='<p class="eyebrow">'+(psgCompetition==='all'?'MATCHS DU PSG':'MATCHS DE LA COMPÉTITION')+'</p>'+matches.sort((a,b)=>String(b.startTime||'').localeCompare(String(a.startTime||''))).map(card).join('');
+   else if(psgCompetition!=='cdf')body+='<div class="empty">Aucun match trouvé dans cette compétition pour le moment.</div>';
+   if(psgCompetition==='all'&&psgError)body+=`<div class="empty">${escapeHtml(psgError)}</div>`;
+   return nav+body;
   }
   return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">${x.status}</span></div><div class="event-main"><div class="teams">${x.left}<br>${x.right}</div><div class="score">${x.score}<small>Pas de score connecté</small></div></div><div class="event-foot"><span>${x.detail}<br><b>${x.tv}</b></span><button class="add-event" data-title="${x.tag}: ${x.left} - ${x.right}">+ CALENDRIER</button></div></article>`;
  }).join('')||'<div class="empty">Aucun événement dans cette rubrique pour le moment.</div>';
  document.querySelectorAll('.add-event').forEach(b=>b.addEventListener('click',()=>downloadICS(b.dataset.title)));
  document.querySelectorAll('[data-padel-view]').forEach(b=>b.addEventListener('click',()=>{padelView=b.dataset.padelView;render();if(padelView==='rankings'&&!padelRankings&&!padelRankingLoading)loadPadelRankings()}));
+ document.querySelectorAll('[data-psg-competition]').forEach(b=>b.addEventListener('click',()=>{psgCompetition=b.dataset.psgCompetition;render();if((psgCompetition==='ligue1'||psgCompetition==='ucl')&&!psgStandings&&!psgStandingsLoading)loadPsgCompetitions()}));
  document.querySelectorAll('[data-padel-gender]').forEach(b=>b.addEventListener('click',()=>{padelGender=b.dataset.padelGender;render()}));
  document.querySelectorAll('[data-f1-view]').forEach(b=>b.addEventListener('click',()=>{f1View=b.dataset.f1View;render()}));
  document.querySelectorAll('[data-f1-standing]').forEach(b=>b.addEventListener('click',()=>{f1StandingMode=b.dataset.f1Standing;render()}));
@@ -235,6 +248,16 @@ async function loadPadel(){
 }
 
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function loadPsgCompetitions(){
+ psgStandingsLoading=true;psgStandingsError='';render();
+ try{
+  const response=await fetch('/.netlify/functions/psg-competitions',{cache:'no-store'});
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.message||'Classements indisponibles');
+  psgStandings=result;
+ }catch(error){psgStandingsError=error.message||'Connexion aux classements impossible';}
+ finally{psgStandingsLoading=false;render();}
+}
 async function loadPsgLive(){
  try{
   const response=await fetch('/.netlify/functions/psg-live',{cache:'no-store'});
@@ -248,7 +271,7 @@ async function loadPsgLive(){
  render();
 }
 
-document.querySelectorAll('.sport').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.sport;document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('.bottom-nav button:first-child').classList.add('selected');render()}));
+document.querySelectorAll('.sport').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.sport;if(filter==='psg'&&!psgStandings&&!psgStandingsLoading)loadPsgCompetitions();document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('.bottom-nav button:first-child').classList.add('selected');render()}));
 const now=new Date();document.querySelector('#today').textContent=new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short'}).format(now).toUpperCase();
 function toast(s){const t=document.querySelector('#toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 function downloadICS(title){const start=new Date(Date.now()+86400000);start.setHours(19,0,0,0);const end=new Date(start.getTime()+90*60000);const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const esc=s=>s.replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\\;');const ics=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Sport Live//FR\r\nBEGIN:VEVENT\r\nUID:${Date.now()}@sportlive\r\nDTSTAMP:${fmt(new Date())}\r\nDTSTART:${fmt(start)}\r\nDTEND:${fmt(end)}\r\nSUMMARY:${esc(title)}\r\nDESCRIPTION:Horaire fictif de démonstration. À remplacer par le calendrier officiel.\r\nEND:VEVENT\r\nEND:VCALENDAR`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='sport-live-evenement.ics';a.click();URL.revokeObjectURL(a.href);toast('Fichier calendrier créé. Ouvre-le pour l’ajouter à Calendrier.');}
