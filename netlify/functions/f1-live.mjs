@@ -40,7 +40,7 @@ export default async () => {
         standingsSession ? get(`/drivers?session_key=${standingsSession.session_key}`) : Promise.resolve([])
       ]);
 
-      const qualifying = nextSessions.find(s => /qualifying/i.test(s.session_name || ""));
+      const qualifying = nextSessions.find(s => /^qualifying$/i.test(s.session_name || ""));
       const race = nextSessions.find(s => /^race$/i.test(s.session_name || ""));
       const qualifyingPassed = !!qualifying && Date.parse(qualifying.date_end) <= now;
 
