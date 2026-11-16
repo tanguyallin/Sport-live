@@ -153,7 +153,7 @@ async function loadF1(){
  render();
 }
 
-function renderF1(){
+function renderF1Legacy(){
  const today=new Date();const todayKey=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
  const next=f1AnnualEvents.find(gp=>gp.end>=todayKey);
  if(!next) return '<div class="empty">La saison 2026 est terminée. Le calendrier 2027 sera ajouté dès sa publication.</div>';
