@@ -153,14 +153,6 @@ async function loadF1(){
  render();
 }
 
-function renderF1Legacy(){
- const today=new Date();const todayKey=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
- const next=f1AnnualEvents.find(gp=>gp.end>=todayKey);
- if(!next) return '<div class="empty">La saison 2026 est terminée. Le calendrier 2027 sera ajouté dès sa publication.</div>';
- const weekend=`${new Date(next.start+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} – ${new Date(next.end+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}`;
- return `<article class="event"><div class="event-top"><span class="tag">FORMULE 1 · PROCHAIN GRAND PRIX</span><span class="status">À VENIR</span></div><div class="event-main"><div class="teams">${escapeHtml(next.name)}</div><div class="score">🏎️<small>${escapeHtml(next.place)}</small></div></div><div class="event-foot"><span>${weekend}</span></div></article><section class="padel-tournament"><header><span class="padel-tournament-kicker">HORAIRES FRANÇAISES</span><h3>${escapeHtml(next.name)}</h3><span class="padel-count">${next.sessions.some(s=>s.name==='Sprint')?'Week-end Sprint':'Sans course Sprint'}</span></header>${next.sessions.map(s=>`<article class="annual-event"><div class="annual-date"><b>${new Date(s.date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</b><small>${escapeHtml(s.time)}</small></div><div class="annual-info"><span>🏎️ F1</span><b>${escapeHtml(s.name)}</b><small>${escapeHtml(next.place)} · Heure de Paris</small></div></article>`).join('')}</section>${f1AnnualEvents.filter(gp=>gp!==next&&gp.end>=todayKey).map(gp=>`<article class="event"><div class="event-top"><span class="tag">PROCHAINEMENT</span><span class="status">${gp.sessions.some(s=>s.name==='Sprint')?'SPRINT':'GRAND PRIX'}</span></div><div class="event-main"><div class="teams">${escapeHtml(gp.name)}</div><div class="score">🏎️<small>${escapeHtml(gp.place)}</small></div></div><div class="event-foot"><span>${new Date(gp.start+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} – ${new Date(gp.end+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</span></div></article>`).join('')}`;
-}
-
 function renderAnnualCalendar(){
  const psgEvents=[...psgRecent,...psgUpcoming].filter((m,i,arr)=>arr.findIndex(x=>String(x.id)===String(m.id))===i).map(m=>({sport:'psg',name:`${m.home} – ${m.away}`,start:(m.startTime||'').slice(0,10),time:m.startTime,place:m.league||'PSG',detail:m.status,score:m.homeScore==null?'':`${m.homeScore}–${m.awayScore}`}));
  const now=new Date();const todayKey=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
