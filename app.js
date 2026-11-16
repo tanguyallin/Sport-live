@@ -247,6 +247,32 @@ async function loadPadel(){
  render();
 }
 
+
+let newsItems=[];let newsFilter='all';let newsLoading=false;let newsError='';
+function renderNews(){
+ const root=document.querySelector('#news-feed');if(!root)return;
+ const filters=[['all','TOUT'],['psg','PSG'],['padel','PADEL'],['f1','F1']];
+ const buttons=filters.map(([id,label])=>'<button data-news-filter="'+id+'" class="'+(newsFilter===id?'active':'')+'">'+label+'</button>').join('');
+ const visible=newsFilter==='all'?newsItems:newsItems.filter(n=>n.sport===newsFilter);
+ let content='';
+ if(newsLoading&&!newsItems.length)content='<div class="empty">Chargement des actualités…</div>';
+ else if(visible.length){
+  content='<div class="news-list">'+visible.map(n=>{
+   const label=n.sport==='psg'?'PSG':n.sport==='padel'?'PADEL':'FORMULE 1';
+   const date=n.date?new Date(n.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+   return '<a class="news-item" href="'+escapeHtml(n.url)+'" target="_blank" rel="noopener"><div class="news-item-copy"><div class="news-meta"><span class="news-category '+n.sport+'">'+label+'</span><span>'+escapeHtml(n.source)+'</span><span>'+date+'</span></div><b>'+escapeHtml(n.title)+'</b><p>'+escapeHtml(n.description||'')+'</p><small>Lire l’article ↗</small></div>'+(n.image?'<img src="'+escapeHtml(n.image)+'" alt="" loading="lazy">':'')+'</a>';
+  }).join('')+'</div>';
+ }else content='<div class="empty">'+(newsError?escapeHtml(newsError):'Aucun article trouvé pour cette rubrique.')+'</div>';
+ root.innerHTML='<div class="news-filters">'+buttons+'</div>'+content+'<p class="data-note">Médias gratuits · Lecture complète selon les conditions de chaque éditeur.</p>';
+ root.querySelectorAll('[data-news-filter]').forEach(b=>b.addEventListener('click',()=>{newsFilter=b.dataset.newsFilter;renderNews()}));
+}
+async function loadNews(){
+ newsLoading=true;renderNews();
+ try{const response=await fetch('/.netlify/functions/news',{cache:'no-store'});const data=await response.json();if(!response.ok)throw new Error(data.message||'Actualités indisponibles');newsItems=Array.isArray(data.articles)?data.articles:[];newsError='';}
+ catch(error){newsError=error.message||'Impossible de charger les actualités.';}
+ finally{newsLoading=false;renderNews();}
+}
+
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function loadPsgCompetitions(){
  psgStandingsLoading=true;psgStandingsError='';render();
@@ -277,5 +303,5 @@ function toast(s){const t=document.querySelector('#toast');t.textContent=s;t.cla
 function downloadICS(title){const start=new Date(Date.now()+86400000);start.setHours(19,0,0,0);const end=new Date(start.getTime()+90*60000);const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const esc=s=>s.replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\\;');const ics=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Sport Live//FR\r\nBEGIN:VEVENT\r\nUID:${Date.now()}@sportlive\r\nDTSTAMP:${fmt(new Date())}\r\nDTSTART:${fmt(start)}\r\nDTEND:${fmt(end)}\r\nSUMMARY:${esc(title)}\r\nDESCRIPTION:Horaire fictif de démonstration. À remplacer par le calendrier officiel.\r\nEND:VEVENT\r\nEND:VCALENDAR`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='sport-live-evenement.ics';a.click();URL.revokeObjectURL(a.href);toast('Fichier calendrier créé. Ouvre-le pour l’ajouter à Calendrier.');}
 document.querySelector('#calendarBtn').onclick=()=>downloadICS('SPORT LIVE - événement à compléter');document.querySelector('#navCalendar').onclick=()=>{filter='calendar';document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navCalendar').classList.add('selected');render();};
 document.querySelector('#notifyBtn').onclick=async()=>{if(!('Notification'in window)){toast('Notifications non prises en charge par ce navigateur.');return}if(!('serviceWorker'in navigator)){toast('Installe d’abord Sport Live sur l’écran d’accueil.');return}try{const p=await Notification.requestPermission();document.querySelector('#notifyState').textContent=p==='granted'?'Autorisation accordée':'Autorisation non accordée';toast(p==='granted'?'Autorisation accordée. Les alertes nécessitent encore un service push.':'Autorisation non accordée.')}catch(e){toast('Impossible d’activer les notifications.')}};
-document.querySelector('#installHint').onclick=()=>toast('Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.');document.querySelector('#navLive').onclick=()=>{filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navLive').classList.add('selected');document.querySelector('[data-sport="all"]').click();toast('Affichage de tous les sports. Les flux live restent à connecter.')};document.querySelector('#navNews').onclick=()=>{filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navNews').classList.add('selected');document.querySelector('.news-head').scrollIntoView({behavior:'smooth'});};
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));render();loadPsgLive();loadPadel();loadF1();setInterval(loadPsgLive,300000);setInterval(loadPadel,600000);setInterval(loadF1,600000);
+document.querySelector('#installHint').onclick=()=>toast('Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.');document.querySelector('#navLive').onclick=()=>{filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navLive').classList.add('selected');document.querySelector('[data-sport="all"]').click();toast('Affichage de tous les sports. Les flux live restent à connecter.')};document.querySelector('#navNews').onclick=()=>{filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navNews').classList.add('selected');document.querySelector('.news-head').scrollIntoView({behavior:'smooth'});if(!newsItems.length&&!newsLoading)loadNews();};
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));render();loadPsgLive();loadPadel();loadF1();loadNews();setInterval(loadPsgLive,300000);setInterval(loadPadel,600000);setInterval(loadF1,600000);
