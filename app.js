@@ -87,7 +87,8 @@ const padelAnnualEvents=[
  ['Milano P1','2026-10-10','2026-10-18','Milan, Italie','P1'],
  ['Kuwait Major','2026-10-23','2026-10-31','Koweït','Major'],
  ['Dubai P1','2026-11-08','2026-11-15','Dubaï, Émirats arabes unis','P1'],
- ['Mexico Major','2026-11-23','2026-11-29','Acapulco, Mexique','Major']
+ ['Mexico Major','2026-11-23','2026-11-29','Acapulco, Mexique','Major'],
+ ['Premier Padel Finals','2026-12-10','2026-12-13','Barcelone, Espagne','Finals']
 ].map(([name,start,end,place,level])=>({sport:'padel',name,start,end,place,detail:level}));
 const f1AnnualEvents=[
  {name:'Las Vegas Grand Prix',start:'2026-11-19',end:'2026-11-21',place:'Las Vegas',country:'États-Unis',flag:'🇺🇸',sessions:[
@@ -228,7 +229,7 @@ function renderPsgSquad(){
  const players=Array.isArray(psgSquad)?psgSquad:[];
  if(!players.length)return '<div class="empty">Effectif indisponible pour le moment.</div>';
  const age=p=>p.dateOfBirth?Math.floor((Date.now()-Date.parse(p.dateOfBirth))/(365.2425*86400000))+' ans':'—';
- return `<div class="psg-squad-list">${players.map(p=>`<article class="psg-player-row"><img src="${escapeHtml(p.image||'')}" alt="" loading="lazy" onerror="this.style.display='none'"><div class="psg-player-main"><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.position||'Poste non renseigné')} · ${p.heightCm?escapeHtml(p.heightCm)+' cm':'Taille —'} · ${age(p)}</small></div></article>`).join('')}</div><p class="data-note">Effectif actuel · Saison 2026/27.</p>`;
+ return `<div class="psg-squad-list">${players.map(p=>`<article class="psg-player-row"><img class="f1-photo psg-player-photo" src="${escapeHtml(p.image||'')}" alt="" loading="lazy" onerror="this.onerror=null;this.style.display='none'"><div class="psg-player-main"><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.position||'Poste non renseigné')} · ${p.heightCm?escapeHtml(p.heightCm)+' cm':'Taille —'} · ${age(p)}</small></div></article>`).join('')}</div><p class="data-note">Effectif actuel · Saison 2026/27.</p>`;
 }
 async function loadPsgSquad(){
  if(psgSquadLoading)return;psgSquadLoading=true;psgSquadError='';render();
@@ -299,7 +300,7 @@ function renderPadel(){
  }else{
   const rows=padelRankings?.[padelGender]||[];
   body=`<div class="padel-gender"><button data-padel-gender="men" class="${padelGender==='men'?'active':''}">HOMMES</button><button data-padel-gender="women" class="${padelGender==='women'?'active':''}">FEMMES</button></div>`+
-   (rows.length?`<div class="ranking-list">${rows.map(r=>`<div class="ranking-row"><b class="ranking-position">#${r.position??'—'}</b>${r.image?`<img class="ranking-photo" src="${escapeHtml(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:'<div class="ranking-photo ranking-photo-empty">👤</div>'}<span class="ranking-name">${escapeHtml(String(r.name||'').replace(/\s+$/,'').replace(/(.{2})$/,' $1'))}${r.country?`<small>${escapeHtml(r.country)}</small>`:''}</span><strong>${r.points==null?'—':Number(r.points).toLocaleString('fr-FR')+' pts'}</strong></div>`).join('')}</div>`:padelRankingLoading?'<div class="empty">Chargement des classements officiels FIP…</div>':`<div class="empty">${escapeHtml(padelRankingError||'Classement indisponible pour le moment.')}</div>`);
+   (rows.length?`<div class="ranking-list">${rows.map(r=>`<div class="ranking-row"><b class="ranking-position">#${r.position??'—'}</b>${r.image?`<img class="ranking-photo" src="${escapeHtml(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:'<div class="ranking-photo ranking-photo-empty">👤</div>'}<span class="ranking-name">${escapeHtml(r.name||'')}${r.country?`<small>${escapeHtml(r.country)}</small>`:''}</span><strong>${r.points==null?'—':Number(r.points).toLocaleString('fr-FR')+' pts'}</strong></div>`).join('')}</div>`:padelRankingLoading?'<div class="empty">Chargement des classements officiels FIP…</div>':`<div class="empty">${escapeHtml(padelRankingError||'Classement indisponible pour le moment.')}</div>`);
  }
  return nav+body+`<p class="data-note">Tournois affichés : Major · P1 · P2 | Actualisation toutes les 10 min</p>`;
 }
