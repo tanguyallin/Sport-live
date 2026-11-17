@@ -136,7 +136,7 @@ function f1Photo(driver){
  const asset=f1DriverAssets[String(driver.name||'').toLowerCase()];
  const teamColor=String(driver.teamColour||'536273').replace('#','');
  const fallback=asset?`https://media.formula1.com/image/upload/ar_1:1,c_crop,g_north,w_1000/b_rgb:${teamColor}/common/f1/2026/${asset.team}/${asset.id}/2026${asset.team}${asset.id}front.png`:null;
- const photo=driver.photo||fallback;
+ const photo=fallback||driver.photo;
  return photo?`<img class="f1-photo" src="${escapeHtml(photo)}" alt="" loading="lazy" onerror="this.onerror=null;this.outerHTML='<div class=\'f1-photo f1-photo-empty\'>${escapeHtml(driver.acronym||'F1')}</div>'">`:`<div class="f1-photo f1-photo-empty">${escapeHtml(driver.acronym||'F1')}</div>`;
 }
 function renderF1Standings(){
