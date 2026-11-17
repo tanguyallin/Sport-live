@@ -7,8 +7,6 @@ const examples=[
 const events=document.querySelector('#events');let filter='all';let calendarFilter='all';let calendarRenderedEvents=[];let psgLive=[];let psgUpcoming=[];let psgRecent=[];let psgError='';let psgCompetition='all';let psgStandings=null;let psgStandingsError='';let psgStandingsLoading=false;let padelData=null;let padelError='';let padelView='schedule';let padelGender='men';let padelRankings=null;let padelRankingError='';let padelRankingLoading=false;let f1Data=null;let f1Error='';let f1View='program';let f1StandingMode='drivers';
 function render(){
  document.body.classList.toggle('direct-mode',filter==='direct');
- const sectionHead=document.querySelector('main > .section-head');
- if(sectionHead){sectionHead.querySelector('.eyebrow').textContent=filter==='direct'?'SPORT LIVE':'À SUIVRE';sectionHead.querySelector('h2').textContent=filter==='direct'?'En direct':'Le programme';}
  if(filter==='direct'){
   events.innerHTML=renderDirect();
   return;
