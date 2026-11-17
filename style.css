@@ -163,3 +163,12 @@ main>.sports .sport{flex:1;text-align:center;min-width:0;padding:11px 7px}
 .psg-player-main>small{font-size:9px;line-height:1.4;color:var(--muted)}
 .psg-player-row>strong{text-align:center;font-size:16px;color:var(--green)}
 .psg-player-row>strong small{display:block;font-size:8px;color:var(--muted);font-weight:600}
+
+/* Harmonisation des boutons PSG avec les onglets des autres sports */
+.psg-competition-tabs{display:flex;gap:7px;overflow-x:auto;margin:0 0 14px;padding-bottom:2px}
+.psg-competition-tabs button{flex:1;min-width:max-content;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:11px 9px;border-radius:12px;font-size:9px;font-weight:850;letter-spacing:.45px}
+.psg-competition-tabs button.active{background:var(--green);border-color:var(--green);color:#0d1715}
+.psg-player-row{grid-template-columns:36px minmax(0,1fr) 30px;gap:10px}
+.psg-player-row>img{width:34px;height:34px;border-radius:50%;object-fit:cover;object-position:top}
+.psg-player-row>strong{font-size:13px}
+.calendar-mode main>.sports{display:none!important}
