@@ -67,8 +67,8 @@ export default async () => {
        if(pos>0&&name&&points>0&&!seen.has(name.toLowerCase())){out.push({position:pos,name,country,points,image:null});seen.add(name.toLowerCase());}
       }
       if(out.length<5){
-       const flat=section.join(" ").replace(/\\s+/g," ");
-       const pattern=/(?:^|\\s)(\\d{1,3})\\s+([A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÿ.'’ -]{2,}?)\\s+([A-Z]{3})\\s+(?:Points\\s*)?([\\d, ]{2,})/g;
+       const flat=section.join(" ").replace(/\s+/g," ");
+       const pattern=/(?:^|\s)(\d{1,3})\s+([A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÿ.'’ -]{2,}?)\s+([A-Z]{3})\s+(?:Points\s*)?([\d, ]{2,})/g;
        for(const match of flat.matchAll(pattern)){
         const pos=Number(match[1]),name=match[2].trim(),country=match[3],points=Number(match[4].replace(/[^0-9]/g,""));
         if(pos>0&&name&&points>0&&!seen.has(name.toLowerCase())){out.push({position:pos,name,country,points,image:null});seen.add(name.toLowerCase());}
