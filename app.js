@@ -20,9 +20,10 @@ function render(){
  }
  const rows=examples.filter(x=>filter==='all'||x.sport===filter);
  events.innerHTML=rows.map(x=>{
-  if(x.sport==='padel') return renderPadel();
+  if(x.sport==='padel') return filter==='all'?renderPadelHome():renderPadel();
   if(x.sport==='f1') return filter==='all'?renderF1Home():renderF1();
   if(x.sport==='psg'){
+   if(filter==='all') return renderPsgHome();
    const tabs=[['all','TOUS'],['ligue1','LIGUE 1'],['ucl','LIGUE DES CHAMPIONS'],['cdf','COUPE DE FRANCE']];
    const nav=`<div class="f1-tabs psg-competition-tabs">${tabs.map(([id,label])=>`<button data-psg-competition="${id}" class="${psgCompetition===id?'active':''}">${label}</button>`).join('')}</div>`;
    const all=[...psgUpcoming,...psgRecent].filter((m,i,a)=>a.findIndex(v=>String(v.id)===String(m.id))===i);
@@ -32,7 +33,7 @@ function render(){
     if(psgCompetition==='ucl')return /champions league|ligue des champions|uefa champions/i.test(league);
     return /coupe de france|french cup/i.test(league);
    });
-   const card=m=>`<article class="event"><div class="event-top"><span class="tag">${escapeHtml(m.league||'PSG')}</span><span class="status">${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${m.homeScore ?? '—'} - ${m.awayScore ?? '—'}<small>${escapeHtml(m.round||m.league||'')}</small></div></div><div class="event-foot"><span>${m.startTime?new Date(m.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Horaire non communiqué'}</span></div></article>`;
+   const card=m=>`<article class="event"><div class="event-top"><span class="tag"><span class="psg-competition-flag">${psgCompetitionIcon(m.league)}</span>${escapeHtml(m.league||'PSG')}</span><span class="status">${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${m.homeScore ?? '—'} - ${m.awayScore ?? '—'}<small>${escapeHtml(m.round||m.league||'')}</small></div></div><div class="event-foot"><span>${m.startTime?new Date(m.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Horaire non communiqué'}</span></div></article>`;
    let body='';
    if(psgCompetition==='ligue1'||psgCompetition==='ucl'){
     const table=psgStandings?.[psgCompetition];
@@ -131,13 +132,14 @@ function renderF1Home(){
 }
 function safeTeamColor(value){const c=String(value||'536273').replace('#','');return /^[0-9a-fA-F]{6}$/.test(c)?'#'+c:'#536273';}
 function f1Photo(driver){
- return driver.photo? `<img class="f1-photo" src="${escapeHtml(driver.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<div class="f1-photo f1-photo-empty">${escapeHtml(driver.acronym||'F1')}</div>`;
+ return driver.photo? `<img class="f1-photo" src="${escapeHtml(driver.photo)}" alt="" loading="lazy">`:`<div class="f1-photo f1-photo-empty">${escapeHtml(driver.acronym||'F1')}</div>`;
 }
 function renderF1Standings(){
  const drivers=f1Data?.drivers?.length?f1Data.drivers:f1FallbackDrivers;
  const teams=f1Data?.teams?.length?f1Data.teams:f1FallbackTeams;
+ const teamMark=t=>{const key=String(t.name||'').toLowerCase();const colors={mercedes:'#27f4d2',ferrari:'#e8002d','red bull racing':'#3671c6',mclaren:'#ff8000','racing bulls':'#6692ff',alpine:'#00a1e8','haas f1 team':'#c8cdd2',audi:'#ff2d00',williams:'#1868db','aston martin':'#229971',cadillac:'#aaaaad'};const initials={mercedes:'M',ferrari:'SF','red bull racing':'RB',mclaren:'MCL','racing bulls':'RB',alpine:'A','haas f1 team':'H',audi:'A',williams:'W','aston martin':'AM',cadillac:'C'};return `<span class="f1-team-logo" style="--team-color:${colors[key]||'#536273'}">${initials[key]||'F1'}</span>`;};
  const switcher=`<div class="padel-gender"><button data-f1-standing="drivers" class="${f1StandingMode==='drivers'?'active':''}">PILOTES</button><button data-f1-standing="teams" class="${f1StandingMode==='teams'?'active':''}">CONSTRUCTEURS</button></div>`;
- if(f1StandingMode==='teams') return switcher+`<div class="ranking-list f1-ranking-list">${teams.map(t=>`<div class="ranking-row f1-team-row"><b class="ranking-position">#${t.position??'—'}</b><span class="f1-team-mark"></span><span class="ranking-name">${escapeHtml(t.name)}</span><strong>${Number(t.points||0).toLocaleString('fr-FR')} pts</strong></div>`).join('')}</div><p class="data-note">Championnat du monde des constructeurs · Saison 2026</p>`;
+ if(f1StandingMode==='teams') return switcher+`<div class="ranking-list f1-ranking-list">${teams.map(t=>`<div class="ranking-row f1-team-row"><b class="ranking-position">#${t.position??'—'}</b>${teamMark(t)}<span class="ranking-name">${escapeHtml(t.name)}</span><strong>${Number(t.points||0).toLocaleString('fr-FR')} pts</strong></div>`).join('')}</div><p class="data-note">Championnat du monde des constructeurs · Saison 2026</p>`;
  return switcher+`<div class="ranking-list f1-ranking-list">${drivers.map(d=>`<div class="ranking-row f1-driver-row"><b class="ranking-position">#${d.position??'—'}</b>${f1Photo(d)}<span class="ranking-name"><b>${escapeHtml(d.name)}</b><small>${escapeHtml(d.team||'Écurie')}</small></span><strong>${Number(d.points||0).toLocaleString('fr-FR')} pts</strong></div>`).join('')}</div><p class="data-note">Championnat du monde des pilotes · Saison 2026</p>`;
 }
 function renderF1Grid(){
@@ -185,6 +187,28 @@ function renderAnnualCalendar(){
  for(const e of filtered){const d=new Date(e.start+'T12:00:00');const key=monthNames[d.getMonth()];if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(e);}
  const blocks=[...grouped.entries()].map(([month,items])=>`<section class="annual-month"><h3>${month} 2026</h3>${items.map(e=>{const d=new Date(e.start+'T12:00:00');const date=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});const end=e.end&&e.end!==e.start?' – '+new Date(e.end+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}):'';const label=e.sport==='psg'?'⚽ PSG':e.sport==='padel'?'🎾 PADEL':'🏎️ F1';const sub=e.sport==='psg'?[e.place,e.time?new Date(e.time).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'',e.score].filter(Boolean).join(' · '):[e.place,e.detail,e.time].filter(Boolean).join(' · ');return `<article class="annual-event"><div class="annual-date"><b>${date}</b><small>${end}</small></div><div class="annual-info"><span>${label}</span><b>${escapeHtml(e.name)}</b><small>${escapeHtml(sub)}</small></div></article>`}).join('')}</section>`).join('');
  return `<div class="calendar-filters">${filters.map(([id,label])=>`<button data-calendar-filter="${id}" class="${calendarFilter===id?'active':''}">${label}</button>`).join('')}</div>${blocks||'<div class="empty">Aucune date disponible pour ce filtre.</div>'}<p class="data-note">Les matchs du PSG proviennent du flux de résultats. Le calendrier Padel et F1 correspond au programme 2026 publié.</p>`;
+}
+function psgCompetitionIcon(league){
+ const name=String(league||'').toLowerCase();
+ if(/champions|ligue des champions|uefa/i.test(name))return '🏆';
+ if(/ligue 1|coupe de france|french cup/i.test(name))return '🇫🇷';
+ return '⚽';
+}
+function renderPsgHome(){
+ const now=Date.now(),live=Array.isArray(psgLive)?psgLive[0]:null;
+ const next=(psgUpcoming||[]).filter(m=>m.startTime&&Date.parse(m.startTime)>=now).sort((a,b)=>Date.parse(a.startTime)-Date.parse(b.startTime))[0];
+ const match=live||next;
+ if(!match)return '<article class="event"><div class="event-top"><span class="tag">⚽ PARIS SAINT-GERMAIN</span><span class="status">À VENIR</span></div><div class="event-main"><div class="teams">Prochain match du PSG</div><div class="score">—</div></div><div class="event-foot"><span>Calendrier en attente de mise à jour</span></div></article>';
+ const date=match.startTime?new Date(match.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'En cours';
+ return `<article class="event psg-home-card"><div class="event-top"><span class="tag"><span class="psg-competition-flag">${psgCompetitionIcon(match.league)}</span>PSG · ${escapeHtml(match.league||'FOOTBALL')}</span><span class="status">${live?'EN DIRECT':'PROCHAIN MATCH'}</span></div><div class="event-main"><div class="teams">${escapeHtml(match.home||'PSG')}<br>${escapeHtml(match.away||'Adversaire')}</div><div class="score">${match.homeScore??'—'} - ${match.awayScore??'—'}<small>${escapeHtml(match.round||match.status||'')}</small></div></div><div class="event-foot"><span>${date}</span></div></article>`;
+}
+function renderPadelHome(){
+ if(padelError)return `<article class="event"><div class="event-top"><span class="tag">🎾 PADEL</span><span class="status">INDISPONIBLE</span></div><div class="empty">${escapeHtml(padelError)}</div></article>`;
+ const live=padelData?.live?.filter(m=>/\bmajor\b|\bp1\b|\bp2\b/i.test(String(m.league||m.tournament||'')))||[];
+ if(live.length){const m=live[0];return `<article class="event"><div class="event-top"><span class="tag">🎾 PADEL · ${escapeHtml(m.tournament||m.league||'PREMIER PADEL')}</span><span class="status">EN DIRECT</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home||'Paire 1')}<br>${escapeHtml(m.away||'Paire 2')}</div><div class="score">${m.homeScore??'—'} - ${m.awayScore??'—'}<small>Match en cours</small></div></div></article>`;}
+ const today=new Date().toISOString().slice(0,10),next=padelAnnualEvents.filter(e=>e.end>=today).sort((a,b)=>a.start.localeCompare(b.start))[0];
+ if(!next)return '<article class="event"><div class="event-top"><span class="tag">🎾 PADEL</span></div><div class="empty">Aucun prochain tournoi annoncé.</div></article>';
+ return `<article class="event padel-home-card"><div class="event-top"><span class="tag">🎾 PREMIER PADEL</span><span class="status">PROCHAIN TOURNOI</span></div><div class="event-main"><div class="teams">${escapeHtml(next.name)}<small>${escapeHtml(next.place)}</small></div><div class="score">${escapeHtml(next.detail)}</div></div><div class="event-foot"><span>${new Date(next.start+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${new Date(next.end+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</span></div></article>`;
 }
 function renderPadel(){
  const nav=`<div class="padel-tabs"><button data-padel-view="schedule" class="${padelView==='schedule'?'active':''}">JOURNÉE PAR JOURNÉE</button><button data-padel-view="rankings" class="${padelView==='rankings'?'active':''}">CLASSEMENTS FIP</button></div>`;
@@ -235,7 +259,7 @@ function renderDirect(){
  const cards=[];
  const psg=Array.isArray(psgLive)?psgLive:[];
  psg.forEach(m=>cards.push(`<article class="event"><div class="event-top"><span class="tag">⚽ PSG · ${escapeHtml(m.league||'FOOTBALL')}</span><span class="status">EN DIRECT</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home||'PSG')}<br>${escapeHtml(m.away||'Adversaire')}</div><div class="score">${m.homeScore??'—'} - ${m.awayScore??'—'}<small>${escapeHtml(m.round||m.status||'Match en cours')}</small></div></div></article>`));
- const padel=Array.isArray(padelData?.live)?padelData.live.filter(m=>/\\bmajor\\b|\\bp1\\b|\\bp2\\b/i.test(String(m.league||m.tournament||''))):[];
+ const padel=Array.isArray(padelData?.live)?padelData.live.filter(m=>/\bmajor\b|\bp1\b|\bp2\b/i.test(String(m.league||m.tournament||''))):[];
  padel.forEach(m=>{const sets=Object.keys(m.homeSets||{}).sort((a,b)=>Number(a)-Number(b)).map(k=>`${m.homeSets[k]}-${m.awaySets?.[k]??'—'}`).join('  ');cards.push(`<article class="event"><div class="event-top"><span class="tag">🎾 PADEL · ${escapeHtml(m.tournament||m.league||'PREMIER PADEL')}</span><span class="status">EN DIRECT</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home||'Paire 1')}<br>${escapeHtml(m.away||'Paire 2')}</div><div class="score">${m.homeScore==null?'—':`${m.homeScore} - ${m.awayScore??'—'}`}<small>${escapeHtml(sets||m.status||'Match en cours')}</small></div></div></article>`)});
  const now=Date.now();
  const f1sessions=(f1Data?.sessions||[]).filter(x=>Date.parse(x.start)<=now&&Date.parse(x.end)>=now);
@@ -312,11 +336,11 @@ async function loadPsgLive(){
  render();
 }
 
-document.querySelectorAll('.sport').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.sport;if(filter==='psg'&&!psgStandings&&!psgStandingsLoading)loadPsgCompetitions();document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('.bottom-nav button:first-child').classList.add('selected');render()}));
+document.querySelectorAll('.sport').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.sport;if(filter==='psg'&&!psgStandings&&!psgStandingsLoading)loadPsgCompetitions();document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navHome').classList.add('selected');render()}));
 const now=new Date();document.querySelector('#today').textContent=new Intl.DateTimeFormat('fr-FR',{weekday:'short',day:'numeric',month:'short'}).format(now).toUpperCase();
 function toast(s){const t=document.querySelector('#toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
 function downloadICS(title){const start=new Date(Date.now()+86400000);start.setHours(19,0,0,0);const end=new Date(start.getTime()+90*60000);const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const esc=s=>s.replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\\;');const ics=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Sport Live//FR\r\nBEGIN:VEVENT\r\nUID:${Date.now()}@sportlive\r\nDTSTAMP:${fmt(new Date())}\r\nDTSTART:${fmt(start)}\r\nDTEND:${fmt(end)}\r\nSUMMARY:${esc(title)}\r\nDESCRIPTION:Horaire fictif de démonstration. À remplacer par le calendrier officiel.\r\nEND:VEVENT\r\nEND:VCALENDAR`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='sport-live-evenement.ics';a.click();URL.revokeObjectURL(a.href);toast('Fichier calendrier créé. Ouvre-le pour l’ajouter à Calendrier.');}
 document.querySelector('#calendarBtn').onclick=()=>downloadICS('SPORT LIVE - événement à compléter');document.querySelector('#navCalendar').onclick=()=>{filter='calendar';document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navCalendar').classList.add('selected');render();};
 document.querySelector('#notifyBtn').onclick=async()=>{if(!('Notification'in window)){toast('Notifications non prises en charge par ce navigateur.');return}if(!('serviceWorker'in navigator)){toast('Installe d’abord Sport Live sur l’écran d’accueil.');return}try{const p=await Notification.requestPermission();document.querySelector('#notifyState').textContent=p==='granted'?'Autorisation accordée':'Autorisation non accordée';toast(p==='granted'?'Autorisation accordée. Les alertes nécessitent encore un service push.':'Autorisation non accordée.')}catch(e){toast('Impossible d’activer les notifications.')}};
-document.querySelector('#installHint').onclick=()=>toast('Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.');document.querySelector('#navLive').onclick=()=>{filter='direct';document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navLive').classList.add('selected');render()};document.querySelector('#navNews').onclick=()=>{document.body.classList.remove('direct-mode');filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navNews').classList.add('selected');document.querySelector('.news-head').scrollIntoView({behavior:'smooth'});if(!newsItems.length&&!newsLoading)loadNews();};
+document.querySelector('#installHint').onclick=()=>toast('Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.');document.querySelector('#navHome').onclick=()=>{filter='all';document.querySelectorAll('.sport').forEach(x=>x.classList.toggle('active',x.dataset.sport==='all'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navHome').classList.add('selected');document.body.classList.remove('direct-mode');render();window.scrollTo({top:0,behavior:'smooth'});};document.querySelector('#navLive').onclick=()=>{filter='direct';document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navLive').classList.add('selected');render()};document.querySelector('#navNews').onclick=()=>{document.body.classList.remove('direct-mode');filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navNews').classList.add('selected');document.querySelector('.news-head').scrollIntoView({behavior:'smooth'});if(!newsItems.length&&!newsLoading)loadNews();};
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));render();loadPsgLive();loadPadel();loadF1();loadNews();setInterval(loadPsgLive,300000);setInterval(loadPadel,600000);setInterval(loadF1,600000);
