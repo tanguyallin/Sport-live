@@ -226,7 +226,7 @@ function renderPsgSquad(){
  const players=Array.isArray(psgSquad)?psgSquad:[];
  if(!players.length)return '<div class="empty">Effectif indisponible pour le moment.</div>';
  const age=p=>p.dateOfBirth?Math.floor((Date.now()-Date.parse(p.dateOfBirth))/(365.2425*86400000))+' ans':'—';
- return `<div class="psg-squad-list">${players.map(p=>`<article class="psg-player-row"><img src="${escapeHtml(p.image||'')}" alt="" loading="lazy" onerror="this.style.display='none'"><div class="psg-player-main"><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.position||'Poste non renseigné')} · ${p.heightCm?escapeHtml(p.heightCm)+' cm':'Taille —'} · ${age(p)}</small></div><strong>${p.appearances==null?'—':p.appearances}<small>matchs</small></strong></article>`).join('')}</div><p class="data-note">Effectif actuel · Saison 2026/27. Le nombre de matchs est affiché lorsqu’il est fourni par la source.</p>`;
+ return `<div class="psg-squad-list">${players.map(p=>`<article class="psg-player-row"><img src="${escapeHtml(p.image||'')}" alt="" loading="lazy" onerror="this.style.display='none'"><div class="psg-player-main"><b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.position||'Poste non renseigné')} · ${p.heightCm?escapeHtml(p.heightCm)+' cm':'Taille —'} · ${age(p)}</small></div><strong>${p.appearances==null?'—':p.appearances}<small>matchs L1</small></strong></article>`).join('')}</div><p class="data-note">Effectif actuel · Saison 2026/27. Le nombre de matchs est affiché lorsqu’il est fourni par la source.</p>`;
 }
 async function loadPsgSquad(){
  if(psgSquadLoading)return;psgSquadLoading=true;psgSquadError='';render();
