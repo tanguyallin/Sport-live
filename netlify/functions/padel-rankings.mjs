@@ -49,20 +49,32 @@ export default async () => {
     if(proxy.ok){
      const text=await proxy.text();
      const parseRows=gender=>{
-      const lines=text.split(/\\r?\\n/);let active=false;const out=[];
+      const lines=text.split(String.fromCharCode(10));let active=false;const section=[];
       for(const line of lines){
-       if(/^#+\\s*Men\\s*$/i.test(line.trim())){active=gender==="men";continue;}
-       if(/^#+\\s*Women\\s*$/i.test(line.trim())){active=gender==="women";continue;}
-       if(!active)continue;
-       const cells=line.split("|").map(x=>x.replace(/[*_\\[\\]]/g,"").trim()).filter(Boolean);
+       const heading=line.trim().replaceAll("#","").trim().toLowerCase();
+       if(heading==="men"){active=gender==="men";continue;}
+       if(heading==="women"){active=gender==="women";continue;}
+       if(active)section.push(line);
+      }
+      const out=[],seen=new Set();
+      for(const line of section){
+       const cells=line.split("|").map(x=>x.replaceAll("*","").replaceAll("_","").replaceAll("[","").replaceAll("]","").trim()).filter(Boolean);
        if(cells.length<4)continue;
        const pos=Number(cells[0].replace(/[^0-9]/g,""));
-       const name=(cells[1]||"").replace(/^Image:\\s*Photo of/i,"").replace(/https?:\\/\\/\\S+/g,"").trim();
-       const country=(cells[2]||"").match(/\\b[A-Z]{3}\\b/)?.[0]||null;
+       const name=(cells[1]||"").replace("Image: Photo of","").trim();
+       const country=(cells[2]||"").match(/[A-Z]{3}/)?.[0]||null;
        const points=Number((cells[3]||"").replace(/[^0-9]/g,""));
-       if(pos>0&&name&&points>0)out.push({position:pos,name,country,points,image:null});
+       if(pos>0&&name&&points>0&&!seen.has(name.toLowerCase())){out.push({position:pos,name,country,points,image:null});seen.add(name.toLowerCase());}
       }
-      return out;
+      if(out.length<5){
+       const flat=section.join(" ").replace(/\\s+/g," ");
+       const pattern=/(?:^|\\s)(\\d{1,3})\\s+([A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÿ.'’ -]{2,}?)\\s+([A-Z]{3})\\s+(?:Points\\s*)?([\\d, ]{2,})/g;
+       for(const match of flat.matchAll(pattern)){
+        const pos=Number(match[1]),name=match[2].trim(),country=match[3],points=Number(match[4].replace(/[^0-9]/g,""));
+        if(pos>0&&name&&points>0&&!seen.has(name.toLowerCase())){out.push({position:pos,name,country,points,image:null});seen.add(name.toLowerCase());}
+       }
+      }
+      return out.sort((a,b)=>a.position-b.position).slice(0,100);
      };
      rankings={men:parseRows("men"),women:parseRows("women")};
     }
