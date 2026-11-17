@@ -28,7 +28,7 @@ async function fetchRanking(category, token) {
    name: String(row.name),
    country: row.nationality ? String(row.nationality).toUpperCase() : null,
    points: Number(row.points),
-   image: null
+   image: row.image || row.image_url || row.photo || row.photo_url || row.player_image || row.avatar || row.avatar_url || row.player?.image || row.player?.photo || null
   }))
   .sort((a, b) => a.position - b.position)
   .slice(0, 50);
