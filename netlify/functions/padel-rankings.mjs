@@ -37,10 +37,50 @@ function parseGender(html,gender) {
 export default async () => {
  if(cachedPayload&&Date.now()<cacheExpiresAt)return Response.json(cachedPayload,{headers:{"Cache-Control":"public, max-age=3600"}});
  if(!pendingRequest)pendingRequest=(async()=>{
-  const r=await fetch("https://www.padelfip.com/fip-rankings/",{headers:{"Accept":"text/html","User-Agent":"SportLive/1.0"}});
-  if(!r.ok)throw new Error("Site officiel FIP HTTP "+r.status);const html=await r.text();
-  const rankings={men:parseGender(html,"Men"),women:parseGender(html,"Women")};
-  if(!rankings.men.length||!rankings.women.length)throw new Error("Le format du classement FIP a changé ou les données ne sont pas accessibles.");
+  const headers={"Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"fr-FR,fr;q=0.9,en-US;q=0.8","User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36","Referer":"https://www.padelfip.com/","Cache-Control":"no-cache"};
+  let html="",lastError="";
+  for(const url of ["https://www.padelfip.com/fip-rankings/","https://padelfip.com/fip-rankings/"]){
+   try{const r=await fetch(url,{headers});if(!r.ok){lastError="Site officiel FIP HTTP "+r.status;continue;}html=await r.text();if(html.length>1000)break;}catch(e){lastError=e.message;}
+  }
+  let rankings=html?{men:parseGender(html,"Men"),women:parseGender(html,"Women")}:{men:[],women:[]};
+  if(!rankings.men.length||!rankings.women.length){
+   try{
+    const proxy=await fetch("https://r.jina.ai/http://www.padelfip.com/fip-rankings/",{headers:{"Accept":"text/plain","User-Agent":"SportLive/1.0"}});
+    if(proxy.ok){
+     const text=await proxy.text();
+     const parseRows=gender=>{
+      const lines=text.split(String.fromCharCode(10));let active=false;const section=[];
+      for(const line of lines){
+       const heading=line.trim().replaceAll("#","").trim().toLowerCase();
+       if(heading==="men"){active=gender==="men";continue;}
+       if(heading==="women"){active=gender==="women";continue;}
+       if(active)section.push(line);
+      }
+      const out=[],seen=new Set();
+      for(const line of section){
+       const cells=line.split("|").map(x=>x.replaceAll("*","").replaceAll("_","").replaceAll("[","").replaceAll("]","").trim()).filter(Boolean);
+       if(cells.length<4)continue;
+       const pos=Number(cells[0].replace(/[^0-9]/g,""));
+       const name=(cells[1]||"").replace("Image: Photo of","").trim();
+       const country=(cells[2]||"").match(/[A-Z]{3}/)?.[0]||null;
+       const points=Number((cells[3]||"").replace(/[^0-9]/g,""));
+       if(pos>0&&name&&points>0&&!seen.has(name.toLowerCase())){out.push({position:pos,name,country,points,image:null});seen.add(name.toLowerCase());}
+      }
+      if(out.length<5){
+       const flat=section.join(" ").replace(/\s+/g," ");
+       const pattern=/(?:^|\s)(\d{1,3})\s+([A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÿ.'’ -]{2,}?)\s+([A-Z]{3})\s+(?:Points\s*)?([\d, ]{2,})/g;
+       for(const match of flat.matchAll(pattern)){
+        const pos=Number(match[1]),name=match[2].trim(),country=match[3],points=Number(match[4].replace(/[^0-9]/g,""));
+        if(pos>0&&name&&points>0&&!seen.has(name.toLowerCase())){out.push({position:pos,name,country,points,image:null});seen.add(name.toLowerCase());}
+       }
+      }
+      return out.sort((a,b)=>a.position-b.position).slice(0,100);
+     };
+     rankings={men:parseRows("men"),women:parseRows("women")};
+    }
+   }catch(e){lastError=e.message;}
+  }
+  if(!rankings.men.length||!rankings.women.length)throw new Error(lastError||"Le classement officiel FIP reste inaccessible (HTTP 403).");
   return{rankings,source:"FIP officiel",sourceUrl:"https://www.padelfip.com/fip-rankings/",checkedAt:new Date().toISOString()};
  })();
  try{const p=await pendingRequest;cachedPayload=p;cacheExpiresAt=Date.now()+12*60*60*1000;return Response.json(p,{headers:{"Cache-Control":"public, max-age=3600"}});}

@@ -33,11 +33,12 @@ export default async () => {
         .sort((a, b) => Date.parse(b.date_end) - Date.parse(a.date_end));
       const standingsSession = completedRaces[0] || allRaceSessions[0] || null;
 
-      const [nextSessions, championshipDrivers, championshipTeams, standingsDrivers] = await Promise.all([
+      const [nextSessions, championshipDrivers, championshipTeams, standingsDrivers, latestDrivers] = await Promise.all([
         nextMeeting ? get(`/sessions?meeting_key=${nextMeeting.meeting_key}`) : Promise.resolve([]),
         standingsSession ? get(`/championship_drivers?session_key=${standingsSession.session_key}`) : Promise.resolve([]),
         standingsSession ? get(`/championship_teams?session_key=${standingsSession.session_key}`) : Promise.resolve([]),
-        standingsSession ? get(`/drivers?session_key=${standingsSession.session_key}`) : Promise.resolve([])
+        standingsSession ? get(`/drivers?session_key=${standingsSession.session_key}`) : Promise.resolve([]),
+        get('/drivers?session_key=latest')
       ]);
 
       const qualifying = nextSessions.find(s => /^qualifying$/i.test(s.session_name || ""));
@@ -53,7 +54,7 @@ export default async () => {
         ]);
       }
 
-      const driverMap = new Map(standingsDrivers.map(d => [Number(d.driver_number), d]));
+      const driverMap = new Map([...standingsDrivers, ...latestDrivers].map(d => [Number(d.driver_number), d]));
       const gridDriverMap = new Map(gridDrivers.map(d => [Number(d.driver_number), d]));
       const mappedStandings = championshipDrivers
         .map(row => {
