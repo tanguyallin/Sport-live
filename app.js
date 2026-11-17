@@ -7,6 +7,7 @@ const examples=[
 const events=document.querySelector('#events');let filter='all';let calendarFilter='all';let calendarRenderedEvents=[];let psgLive=[];let psgUpcoming=[];let psgRecent=[];let psgError='';let psgCompetition='all';let psgSquadView=false;let psgSquad=null;let psgSquadError='';let psgSquadLoading=false;let psgStandings=null;let psgStandingsError='';let psgStandingsLoading=false;let padelData=null;let padelError='';let padelView='schedule';let padelGender='men';let padelRankings=null;let padelRankingError='';let padelRankingLoading=false;let f1Data=null;let f1Error='';let f1View='program';let f1StandingMode='drivers';
 function render(){
  document.body.classList.toggle('direct-mode',filter==='direct');
+ const sportBars=document.querySelectorAll('.sports');sportBars.forEach((bar,index)=>{if(index>0)bar.remove()});
  if(filter==='direct'){
   events.innerHTML=renderDirect();
   return;
@@ -42,9 +43,11 @@ function render(){
    }else if(psgCompetition==='cdf'){
     body=`<section class="padel-tournament"><header><span class="padel-tournament-kicker">COMPÉTITION À ÉLIMINATION DIRECTE</span><h3>Coupe de France</h3><span class="padel-count">Pas de classement général</span></header><a class="psg-source-link" href="https://www.lequipe.fr/Football/Coupe-de-France/" target="_blank" rel="noopener">Calendrier et résultats sur L’Équipe ↗</a></section>`;
    }
-   if(matches.length)body+='<p class="eyebrow">'+(psgCompetition==='all'?'MATCHS DU PSG':'MATCHS DE LA COMPÉTITION')+'</p>'+matches.sort((a,b)=>String(b.startTime||'').localeCompare(String(a.startTime||''))).map(card).join('');
-   else if(psgCompetition!=='cdf')body+='<div class="empty">Aucun match trouvé dans cette compétition pour le moment.</div>';
-   if(psgCompetition==='all'&&psgError)body+=`<div class="empty">${escapeHtml(psgError)}</div>`;
+   if(!psgSquadView){
+    if(matches.length)body+='<p class="eyebrow">'+(psgCompetition==='all'?'MATCHS À VENIR':'MATCHS DE LA COMPÉTITION')+'</p>'+matches.sort((a,b)=>String(b.startTime||'').localeCompare(String(a.startTime||''))).map(card).join('');
+    else if(psgCompetition!=='cdf')body+='<div class="empty">Aucun match trouvé dans cette compétition pour le moment.</div>';
+    if(psgCompetition==='all'&&psgError)body+=`<div class="empty">${escapeHtml(psgError)}</div>`;
+   }
    return nav+body;
   }
   return `<article class="event"><div class="event-top"><span class="tag">${x.tag}</span><span class="status">${x.status}</span></div><div class="event-main"><div class="teams">${x.left}<br>${x.right}</div><div class="score">${x.score}<small>Pas de score connecté</small></div></div><div class="event-foot"><span>${x.detail}<br><b>${x.tv}</b></span><button class="add-event" data-title="${x.tag}: ${x.left} - ${x.right}">+ CALENDRIER</button></div></article>`;
