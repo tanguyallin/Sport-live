@@ -96,7 +96,8 @@ const padelAnnualEvents=[
  ['Milano P1','2026-10-10','2026-10-18','Milan, Italie','P1'],
  ['Kuwait Major','2026-10-23','2026-10-31','Koweït','Major'],
  ['Dubai P1','2026-11-08','2026-11-15','Dubaï, Émirats arabes unis','P1'],
- ['Mexico Major','2026-11-23','2026-11-29','Acapulco, Mexique','Major']
+ ['Mexico Major','2026-11-21','2026-11-29','Acapulco, Mexique','Major'],
+ ['Premier Padel Finals','2026-12-10','2026-12-13','Barcelone, Espagne','Finals']
 ].map(([name,start,end,place,level])=>({sport:'padel',name,start,end,place,detail:level}));
 const f1AnnualEvents=[
  {name:'Las Vegas Grand Prix',start:'2026-11-19',end:'2026-11-21',place:'Las Vegas',country:'États-Unis',flag:'🇺🇸',sessions:[
