@@ -67,11 +67,14 @@ async function searchEntity(query, type, predicate) {
 }
 
 async function psgTeam() {
-  return searchEntity("Paris Saint-Germain", "team", item =>
-    item.sport === "football" &&
-    normalize(item.name) === "paris saint-germain" &&
-    (!item.gender || item.gender === "male")
-  );
+  const isMen = item => item.sport === "football" &&
+    /paris saint.?germain|paris sg/i.test(item.name || "") &&
+    (!item.gender || item.gender === "male");
+  try {
+    return await searchEntity("Paris Saint-Germain", "team", isMen);
+  } catch (firstError) {
+    return searchEntity("Paris SG", "team", isMen);
+  }
 }
 
 async function league(query, predicate) {
