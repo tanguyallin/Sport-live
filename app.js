@@ -390,7 +390,7 @@ function renderNews(){
  root.innerHTML=filters+content+(dedicated?'<p class="data-note">Médias gratuits · Lecture complète selon les conditions de chaque éditeur.</p>':(sorted.length?'<button class="news-more" id="newsMore">Voir toutes les actualités <span>→</span></button>':''));
  root.querySelectorAll('[data-news-filter]').forEach(b=>b.addEventListener('click',()=>{newsFilter=b.dataset.newsFilter;renderNews()}));
  root.querySelector('#newsMore')?.addEventListener('click',openNewsPage);
- document.querySelector('#newsSeeAll')?.addEventListener('click',openNewsPage);
+ document.querySelector('#newsSeeAll')&&(document.querySelector('#newsSeeAll').onclick=openNewsPage);
  const head=document.querySelector('.news-head');
  if(head){head.querySelector('.eyebrow').textContent=dedicated?'TOUTES LES COMPÉTITIONS':'LE SPORT EN CONTINU';head.querySelector('h2').textContent=dedicated?'Actualités':'À la une';head.querySelector('#newsSeeAll').hidden=dedicated;}
 }
