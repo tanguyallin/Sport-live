@@ -42,9 +42,8 @@ export default async () => {
         throw new Error("Impossible de trouver le club Paris Saint-Germain dans SportsAPI.");
       }
 
-      const [upcoming, recent, live] = await Promise.all([
+      const [upcoming, live] = await Promise.all([
         get(`https://api.sportsapi.app/v2/teams/${team.id}/fixtures?type=upcoming&page=0`),
-        get(`https://api.sportsapi.app/v2/teams/${team.id}/fixtures?type=recent&page=0`),
         get("https://api.sportsapi.app/v2/livescores?sport=football")
       ]);
 
@@ -68,18 +67,16 @@ export default async () => {
       const payload = {
         live: (Array.isArray(live) ? live : []).filter(isPsg).map(mapMatch),
         upcoming: (Array.isArray(upcoming) ? upcoming : []).map(mapMatch),
-        recent: (Array.isArray(recent) ? recent : []).map(mapMatch),
+        recent: [],
         checkedAt: new Date().toISOString(),
         diagnostics: {
           upcomingCount: Array.isArray(upcoming) ? upcoming.length : -1,
-          recentCount: Array.isArray(recent) ? recent.length : -1,
+          recentCount: 0,
           liveCount: Array.isArray(live) ? live.length : -1,
           upcomingFirstStartTime: Array.isArray(upcoming)
             ? (upcoming[0]?.startTime || upcoming[0]?.start_time || upcoming[0]?.date || null)
             : null,
-          recentFirstStartTime: Array.isArray(recent)
-            ? (recent[0]?.startTime || recent[0]?.start_time || recent[0]?.date || null)
-            : null
+          recentFirstStartTime: null
         }
       };
 
