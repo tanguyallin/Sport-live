@@ -26,14 +26,14 @@ function render(){
   if(x.sport==='f1') return filter==='all'?renderF1Home():renderF1();
   if(x.sport==='psg'){
    if(filter==='all') return renderPsgHome();
-   const tabs=[['ligue1','LIGUE 1'],['ucl','LIGUE DES CHAMPIONS'],['cdf','COUPE DE FRANCE']];
+   const tabs=[['ligue1','LIGUE 1'],['ucl','LIGUE DES CHAMPIONS']];
    const nav=`<div class="f1-tabs psg-competition-tabs"><button data-psg-effectif="1" class="${psgSquadView?'active':''}">EFFECTIF</button><button data-psg-competition="all" class="${!psgSquadView&&psgCompetition==='all'?'active':''}">MATCH À VENIR</button>${tabs.map(([id,label])=>`<button data-psg-competition="${id}" class="${!psgSquadView&&psgCompetition===id?'active':''}">${label}</button>`).join('')}</div>`;
    const all=[...psgUpcoming].filter((m,i,a)=>a.findIndex(v=>String(v.id)===String(m.id))===i);
    const matches=psgSquadView?[]:psgCompetition==='all'?all:[...psgUpcoming,...psgRecent].filter((m,i,a)=>a.findIndex(v=>String(v.id)===String(m.id))===i).filter(m=>{
     const league=String(m.league||'').toLowerCase();
     if(psgCompetition==='ligue1')return /ligue 1|ligue 1 mcdonald/i.test(league);
     if(psgCompetition==='ucl')return /champions league|ligue des champions|uefa champions/i.test(league);
-    return /coupe de france|french cup/i.test(league);
+    return /champions league|ligue des champions|uefa champions/i.test(league);
    });
    const card=m=>`<article class="event"><div class="event-top"><span class="tag"><span class="psg-competition-flag">${psgCompetitionIcon(m.league)}</span>${escapeHtml(m.league||'PSG')}</span><span class="status">${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${m.homeScore ?? '—'} - ${m.awayScore ?? '—'}<small>${escapeHtml(m.round||m.league||'')}</small></div></div><div class="event-foot"><span>${m.startTime?new Date(m.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Horaire non communiqué'}</span></div></article>`;
    let body='';
@@ -42,12 +42,10 @@ function render(){
     const table=psgStandings?.[psgCompetition];
     body=table?.rows?.length?`<section class="padel-tournament psg-standings"><header><span class="padel-tournament-kicker">CLASSEMENT · SAISON 2026/27</span><h3>${escapeHtml(table.name)}</h3></header><div class="psg-table-wrap" style="overflow-x:auto"><table class="psg-table" style="width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px"><thead><tr><th>#</th><th style="text-align:left">ÉQUIPE</th><th>J</th><th>G</th><th>N</th><th>P</th><th>BP</th><th>BC</th><th>+/-</th><th>PTS</th></tr></thead><tbody>${table.rows.map(r=>`<tr class="${/paris.?sg|paris saint-germain/i.test(r.team)?'psg-highlight':''}" style="${/paris.?sg|paris saint-germain/i.test(r.team)?'font-weight:800;background:rgba(40,100,210,.12)':''}"><td style="padding:9px 6px">${r.position}</td><td style="text-align:left;padding:9px 6px">${r.image?`<img src="${escapeHtml(r.image)}" alt="" loading="lazy" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;margin-right:6px">`:''}${escapeHtml(r.team)}</td><td>${r.played??'—'}</td><td>${r.wins??'—'}</td><td>${r.draws??'—'}</td><td>${r.losses??'—'}</td><td>${r.for??'—'}</td><td>${r.against??'—'}</td><td>${r.diff==null?'—':(r.diff>0?'+':'')+r.diff}</td><td><b>${r.points??'—'}</b></td></tr>`).join('')}</tbody></table></div><a class="psg-source-link" style="display:inline-block;margin-top:12px" href="${table.sourceUrl}" target="_blank" rel="noopener">Voir aussi sur L’Équipe ↗</a></section>`:
      psgStandingsLoading?'<div class="empty">Chargement du classement…</div>':`<div class="empty">${escapeHtml(psgStandingsError||table?.error||'Classement pas encore disponible.')}</div>`;
-   }else if(psgCompetition==='cdf'){
-    body=`<section class="padel-tournament"><header><span class="padel-tournament-kicker">COMPÉTITION À ÉLIMINATION DIRECTE</span><h3>Coupe de France</h3><span class="padel-count">Pas de classement général</span></header><a class="psg-source-link" href="https://www.lequipe.fr/Football/Coupe-de-France/" target="_blank" rel="noopener">Calendrier et résultats sur L’Équipe ↗</a></section>`;
    }
    if(!psgSquadView){
     if(matches.length)body+='<p class="eyebrow">'+(psgCompetition==='all'?'MATCHS À VENIR':'MATCHS DE LA COMPÉTITION')+'</p>'+matches.sort((a,b)=>String(a.startTime||'').localeCompare(String(b.startTime||''))).map(card).join('');
-    else if(psgCompetition!=='cdf')body+='<div class="empty">Aucun match trouvé dans cette compétition pour le moment.</div>';
+    else body+='<div class="empty">Aucun match trouvé dans cette compétition pour le moment.</div>';
     if(psgCompetition==='all'&&psgError)body+=`<div class="empty">${escapeHtml(psgError)}</div>`;
    }
    return nav+body;
