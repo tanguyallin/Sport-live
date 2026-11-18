@@ -57,7 +57,7 @@ exports.handler = async () => {
     );
     const list = Array.isArray(entries) ? entries : [];
     const ligue1Entry = list.find(item =>
-      /ligue\\s*1/i.test(item?.league?.name || "")
+      /ligue\s*1/i.test(item?.league?.name || "")
     );
     const uclEntry = list.find(item =>
       /champions league|ligue des champions/i.test(item?.league?.name || "")
