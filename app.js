@@ -8,11 +8,13 @@ const events=document.querySelector('#events');let filter='all';let calendarFilt
 function render(){
  document.body.classList.toggle('direct-mode',filter==='direct');
  document.body.classList.toggle('calendar-mode',filter==='calendar');
+ document.body.classList.toggle('news-mode',filter==='news');
  const sportBars=document.querySelectorAll('.sports');sportBars.forEach((bar,index)=>{if(index>0)bar.remove()});
  if(filter==='direct'){
   events.innerHTML=renderDirect();
   return;
  }
+ if(filter==='news'){events.innerHTML='';return;}
  if(filter==='calendar'){
   events.innerHTML=renderAnnualCalendar();
   document.querySelectorAll('[data-calendar-add]').forEach(b=>b.addEventListener('click',()=>downloadCalendarEvent(calendarRenderedEvents[Number(b.dataset.calendarAdd)])));
@@ -360,19 +362,37 @@ async function loadPadel(){
 
 
 let newsItems=[];let newsFilter='all';let newsLoading=false;let newsError='';
+function openNewsPage(){
+ filter='news';
+ document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));
+ document.querySelector('#navNews').classList.add('selected');
+ render();
+ renderNews();
+ if(!newsItems.length&&!newsLoading)loadNews();
+ window.scrollTo({top:0,behavior:'smooth'});
+}
 function renderNews(){
  const root=document.querySelector('#news-feed');if(!root)return;
- const visible=(newsFilter==='all'?newsItems:newsItems.filter(n=>n.sport===newsFilter)).slice().sort((a,b)=>Date.parse(b.date||0)-Date.parse(a.date||0)).slice(0,12);
+ const sorted=(newsFilter==='all'?newsItems:newsItems.filter(n=>n.sport===newsFilter)).slice().sort((a,b)=>Date.parse(b.date||0)-Date.parse(a.date||0));
+ const dedicated=filter==='news';
+ const visible=dedicated?sorted.slice(0,12):sorted.slice(0,3);
+ const label=n=>n.sport==='psg'?'PSG':n.sport==='padel'?'PADEL':'FORMULE 1';
+ const item=n=>{const date=n.date?new Date(n.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';return '<a class="news-item" href="'+escapeHtml(n.url)+'" target="_blank" rel="noopener"><div class="news-item-copy"><div class="news-meta"><span class="news-category '+n.sport+'">'+label(n)+'</span><span>'+escapeHtml(n.source)+'</span><span>'+date+'</span></div><b>'+escapeHtml(n.title)+'</b><p>'+escapeHtml(n.description||'')+'</p><small>Lire l’article ↗</small></div>'+(n.image?'<img src="'+escapeHtml(n.image)+'" alt="" loading="lazy">':'')+'</a>';};
  let content='';
  if(newsLoading&&!newsItems.length)content='<div class="empty">Chargement des actualités…</div>';
  else if(visible.length){
-  content='<div class="news-list">'+visible.map(n=>{
-   const label=n.sport==='psg'?'PSG':n.sport==='padel'?'PADEL':'FORMULE 1';
-   const date=n.date?new Date(n.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-   return '<a class="news-item" href="'+escapeHtml(n.url)+'" target="_blank" rel="noopener"><div class="news-item-copy"><div class="news-meta"><span class="news-category '+n.sport+'">'+label+'</span><span>'+escapeHtml(n.source)+'</span><span>'+date+'</span></div><b>'+escapeHtml(n.title)+'</b><p>'+escapeHtml(n.description||'')+'</p><small>Lire l’article ↗</small></div>'+(n.image?'<img src="'+escapeHtml(n.image)+'" alt="" loading="lazy">':'')+'</a>';
-  }).join('')+'</div>';
+  if(dedicated){
+   const featured=visible[0];
+   content='<a class="news-featured" href="'+escapeHtml(featured.url)+'" target="_blank" rel="noopener">'+(featured.image?'<img src="'+escapeHtml(featured.image)+'" alt="" loading="lazy">':'<div class="news-featured-placeholder">SPORT LIVE</div>')+'<div class="news-featured-copy"><span class="news-category '+featured.sport+'">'+label(featured)+'</span><b>'+escapeHtml(featured.title)+'</b><small>'+escapeHtml(featured.source)+' · Lire l’article ↗</small></div></a><div class="news-list">'+visible.slice(1).map(item).join('')+'</div>';
+  }else content='<div class="news-list">'+visible.map(item).join('')+'</div>';
  }else content='<div class="empty">'+(newsError?escapeHtml(newsError):'Aucun article trouvé pour cette rubrique.')+'</div>';
- root.innerHTML='<div class="news-filters">'+[['all','TOUT'],['psg','PSG'],['padel','PADEL'],['f1','F1']].map(([id,label])=>'<button data-news-filter="'+id+'" class="'+(newsFilter===id?'active':'')+'">'+label+'</button>').join('')+'</div>'+content+'<p class="data-note">Médias gratuits · Lecture complète selon les conditions de chaque éditeur.</p>';root.querySelectorAll('[data-news-filter]').forEach(b=>b.addEventListener('click',()=>{newsFilter=b.dataset.newsFilter;renderNews()}));
+ const filters='<div class="news-filters">'+[['all','TOUT'],['psg','PSG'],['padel','PADEL'],['f1','F1']].map(([id,label])=>'<button data-news-filter="'+id+'" class="'+(newsFilter===id?'active':'')+'">'+label+'</button>').join('')+'</div>';
+ root.innerHTML=filters+content+(dedicated?'<p class="data-note">Médias gratuits · Lecture complète selon les conditions de chaque éditeur.</p>':(sorted.length?'<button class="news-more" id="newsMore">Voir toutes les actualités <span>→</span></button>':''));
+ root.querySelectorAll('[data-news-filter]').forEach(b=>b.addEventListener('click',()=>{newsFilter=b.dataset.newsFilter;renderNews()}));
+ root.querySelector('#newsMore')?.addEventListener('click',openNewsPage);
+ document.querySelector('#newsSeeAll')?.addEventListener('click',openNewsPage);
+ const head=document.querySelector('.news-head');
+ if(head){head.querySelector('.eyebrow').textContent=dedicated?'TOUTES LES COMPÉTITIONS':'LE SPORT EN CONTINU';head.querySelector('h2').textContent=dedicated?'Actualités':'À la une';head.querySelector('#newsSeeAll').hidden=dedicated;}
 }
 async function loadNews(){
  newsLoading=true;renderNews();
@@ -380,7 +400,6 @@ async function loadNews(){
  catch(error){newsError=error.message||'Impossible de charger les actualités.';}
  finally{newsLoading=false;renderNews();}
 }
-
 function normalizeSearch(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
 function formatMatchDateTime(value){if(!value)return 'Date et heure à confirmer';const d=new Date(value);if(Number.isNaN(d.getTime()))return 'Date et heure à confirmer';return new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(d);}
 function buildSearchResults(query){
@@ -445,7 +464,7 @@ function toast(s){const t=document.querySelector('#toast');t.textContent=s;t.cla
 function downloadICS(title){const start=new Date(Date.now()+86400000);start.setHours(19,0,0,0);const end=new Date(start.getTime()+90*60000);const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const esc=s=>s.replace(/\\/g,'\\\\').replace(/,/g,'\\,').replace(/;/g,'\\;');const ics=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Sport Live//FR\r\nBEGIN:VEVENT\r\nUID:${Date.now()}@sportlive\r\nDTSTAMP:${fmt(new Date())}\r\nDTSTART:${fmt(start)}\r\nDTEND:${fmt(end)}\r\nSUMMARY:${esc(title)}\r\nDESCRIPTION:Horaire fictif de démonstration. À remplacer par le calendrier officiel.\r\nEND:VEVENT\r\nEND:VCALENDAR`;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='sport-live-evenement.ics';a.click();URL.revokeObjectURL(a.href);toast('Fichier calendrier créé. Ouvre-le pour l’ajouter à Calendrier.');}
 document.querySelector('#navCalendar').onclick=()=>{filter='calendar';selectedPsgMatch=null;document.body.classList.remove('direct-mode');document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navCalendar').classList.add('selected');render();window.scrollTo({top:0,behavior:'smooth'});};
 
-document.querySelector('#installHint').onclick=()=>toast('Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.');document.querySelector('#navHome').onclick=()=>{filter='all';document.querySelectorAll('.sport').forEach(x=>x.classList.toggle('active',x.dataset.sport==='all'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navHome').classList.add('selected');document.body.classList.remove('direct-mode');render();renderNews();window.scrollTo({top:0,behavior:'smooth'});};document.querySelector('#navLive').onclick=()=>{filter='direct';document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navLive').classList.add('selected');render()};document.querySelector('#navNews').onclick=()=>{document.body.classList.remove('direct-mode');filter='all';document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navNews').classList.add('selected');document.querySelector('.news-head').scrollIntoView({behavior:'smooth'});if(!newsItems.length&&!newsLoading)loadNews();};
+document.querySelector('#installHint').onclick=()=>toast('Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.');document.querySelector('#navHome').onclick=()=>{filter='all';document.querySelectorAll('.sport').forEach(x=>x.classList.toggle('active',x.dataset.sport==='all'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navHome').classList.add('selected');document.body.classList.remove('direct-mode');render();renderNews();window.scrollTo({top:0,behavior:'smooth'});};document.querySelector('#navLive').onclick=()=>{filter='direct';document.querySelectorAll('.sport').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.bottom-nav button').forEach(x=>x.classList.remove('selected'));document.querySelector('#navLive').classList.add('selected');render()};document.querySelector('#navNews').onclick=openNewsPage;
 document.querySelector('#searchToggle')?.addEventListener('click',()=>{const pop=document.querySelector('#searchPopover'),input=document.querySelector('#globalSearch'),open=pop.hidden;pop.hidden=!open;document.querySelector('#searchToggle').setAttribute('aria-expanded',String(open));if(open){input.focus();renderSearchResults(input.value);if(!psgSquad&&!psgSquadLoading)loadPsgSquad();if(!padelRankings&&!padelRankingLoading)loadPadelRankings();}});
 document.querySelector('#searchClose')?.addEventListener('click',closeSearch);
 document.querySelector('#globalSearch')?.addEventListener('input',e=>renderSearchResults(e.target.value));
