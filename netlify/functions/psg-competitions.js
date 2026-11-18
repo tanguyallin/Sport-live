@@ -1,23 +1,10 @@
 const { api, cached, jsonResponse, psgTeam, normalize } = require("./sportsapi");
 
 async function findFrenchLeague() {
-  const categories = await cached(
-    "football-categories",
-    24 * 60 * 60 * 1000,
-    () => api("/categories?sport=football")
-  );
-  const france = (Array.isArray(categories) ? categories : []).find(item =>
-    item.sport === "football" &&
-    (item.country?.code === "FR" || normalize(item.name) === "france")
-  );
-  if (!france?.id) {
-    return { competition: null, categoryFound: false, leaguesCount: 0 };
-  }
-
   const leagues = await cached(
-    `football-leagues-category:${france.id}`,
+    "football-leagues-france",
     24 * 60 * 60 * 1000,
-    () => api(`/leagues?category=${france.id}`)
+    () => api("/leagues?sport=football&country=FR")
   );
   const list = Array.isArray(leagues) ? leagues : [];
   const competition = list.find(item =>
@@ -29,7 +16,7 @@ async function findFrenchLeague() {
     normalize(item.slug).startsWith("ligue-1")
   );
 
-  return { competition: competition || null, categoryFound: true, leaguesCount: list.length };
+  return { competition: competition || null, directoryLoaded: true, leaguesCount: list.length };
 }
 
 async function competitionTable(competition, kind, currentYear) {
@@ -105,7 +92,7 @@ exports.handler = async () => {
         : Promise.resolve({
             name: "Ligue 1",
             rows: [],
-            error: frenchDirectory.categoryFound
+            error: frenchDirectory.directoryLoaded
               ? "La Ligue 1 n’a pas été trouvée dans le répertoire des compétitions françaises de SportsAPI."
               : "Le répertoire des compétitions françaises est indisponible dans SportsAPI."
           }),
