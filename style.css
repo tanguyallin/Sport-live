@@ -231,3 +231,6 @@ body{background:radial-gradient(ellipse at 8% 0%,rgba(25,91,87,.28),transparent 
 /* En-tête d'accueil simplifié : une seule identité SPORT LIVE */
 .topbar{height:68px;padding-left:16px;padding-right:16px}.brand{gap:9px;min-width:0}.brand-mark{width:34px;height:34px;border-radius:11px;font-size:21px;flex:0 0 34px}.brand b{font-size:14px;letter-spacing:1.4px;white-space:nowrap}.brand small{font-size:7px;letter-spacing:1px;white-space:nowrap;margin-top:2px}.topbar-actions{gap:7px}.topbar .round{width:35px;height:35px}
 @media(max-width:360px){.topbar{padding-left:12px;padding-right:12px}.brand small{font-size:6.5px;letter-spacing:.6px}.brand{gap:7px}}
+
+/* Conserver le motif graphique discret du bandeau d’accueil */
+.topbar{position:relative;overflow:visible}.topbar:after{content:"";position:absolute;right:105px;top:-34px;width:145px;height:115px;transform:skew(-22deg);border:1px solid rgba(139,230,189,.12);background:repeating-linear-gradient(135deg,transparent 0 12px,rgba(139,230,189,.04) 12px 14px);pointer-events:none;z-index:-1}
