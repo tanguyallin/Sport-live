@@ -91,7 +91,7 @@ export default async () => {
     // Use the same team standings/seasons endpoint that powered the original version.
     const entries = await json(`/teams/${team.id}/standings/seasons`, headers);
     const list = Array.isArray(entries) ? entries : [];
-    const ligue1Entry = list.find(item => /ligue\\s*1/i.test(item?.league?.name || ""));
+    const ligue1Entry = list.find(item => /ligue\s*1/i.test(item?.league?.name || ""));
     const uclEntry = list.find(item =>
       /champions league|ligue des champions/i.test(item?.league?.name || "")
     );
