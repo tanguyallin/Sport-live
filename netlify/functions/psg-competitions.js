@@ -35,14 +35,16 @@ async function leagueTable(query, predicate) {
 
 exports.handler = async () => {
   try {
-    const [ligue1, ucl] = await Promise.all([
-      leagueTable("Ligue 1", item =>
-        normalize(item.name) === "ligue 1"
-      ),
-      leagueTable("UEFA Champions League", item =>
-        normalize(item.name).includes("champions league")
-      )
+    const [ligue1Result, uclResult] = await Promise.allSettled([
+      leagueTable("Ligue 1", item => normalize(item.name) === "ligue 1"),
+      leagueTable("Champions League", item => normalize(item.name).includes("champions league"))
     ]);
+    const ligue1 = ligue1Result.status === "fulfilled"
+      ? ligue1Result.value
+      : { name: "Ligue 1", rows: [], error: ligue1Result.reason?.message || "Classement indisponible." };
+    const ucl = uclResult.status === "fulfilled"
+      ? uclResult.value
+      : { name: "Ligue des Champions", rows: [], error: uclResult.reason?.message || "Classement indisponible." };
     return jsonResponse(200, { ligue1, ucl, updatedAt: new Date().toISOString() }, 900);
   } catch (error) {
     console.error("psg-competitions:", error);
