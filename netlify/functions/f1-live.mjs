@@ -1,6 +1,31 @@
 let cachedPayload = null;
 let cacheExpiresAt = 0;
 let pendingRequest = null;
+let cachedAccessToken = null;
+let tokenExpiresAt = 0;
+let pendingToken = null;
+
+async function getOpenF1Token() {
+  if (cachedAccessToken && Date.now() < tokenExpiresAt) return cachedAccessToken;
+  if (pendingToken) return pendingToken;
+  const username = process.env.OPENF1_USERNAME;
+  const password = process.env.OPENF1_PASSWORD;
+  if (!username || !password) return null;
+  pendingToken = (async () => {
+    const body = new URLSearchParams({ username, password });
+    const response = await fetch("https://api.openf1.org/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+      body
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.access_token) throw new Error(data.detail || data.message || "Authentification OpenF1 refusée.");
+    cachedAccessToken = data.access_token;
+    tokenExpiresAt = Date.now() + 55 * 60 * 1000;
+    return cachedAccessToken;
+  })();
+  try { return await pendingToken; } finally { pendingToken = null; }
+}
 
 export default async () => {
   if (cachedPayload && Date.now() < cacheExpiresAt) {
@@ -10,10 +35,12 @@ export default async () => {
   if (!pendingRequest) {
     pendingRequest = (async () => {
       const base = "https://api.openf1.org/v1";
-      const openF1Key = process.env.OPENF1_API_KEY;
+      let openF1Token = null;
+      let openF1AuthError = "";
+      try { openF1Token = await getOpenF1Token(); } catch (error) { openF1AuthError = error.message || "Authentification OpenF1 impossible."; }
       const get = async (path) => {
         const headers = { Accept: "application/json" };
-        if (openF1Key) headers.Authorization = `Bearer ${openF1Key}`;
+        if (openF1Token) headers.Authorization = `Bearer ${openF1Token}`;
         const response = await fetch(base + path, { headers });
         if (!response.ok) return [];
         const data = await response.json();
@@ -46,8 +73,8 @@ export default async () => {
 
       
       const activeSession = nextSessions.find(s => Date.parse(s.date_start) <= now && Date.parse(s.date_end) >= now) || null;
-      let liveTiming = { active: !!activeSession, refreshable: !!activeSession && !!openF1Key, available: false, message: openF1Key ? "En attente des données de chronométrage." : "Le direct OpenF1 nécessite une clé API avec accès temps réel. Ajoute OPENF1_API_KEY dans les variables Netlify.", sessionName: activeSession?.session_name || null, drivers: [], updatedAt: new Date().toISOString() };
-      if (activeSession && openF1Key) {
+      let liveTiming = { active: !!activeSession, refreshable: !!activeSession && !!openF1Token, available: false, message: openF1Token ? "En attente des données de chronométrage." : (openF1AuthError || "Le direct OpenF1 nécessite un abonnement Live et les variables OPENF1_USERNAME et OPENF1_PASSWORD dans Netlify."), sessionName: activeSession?.session_name || null, drivers: [], updatedAt: new Date().toISOString() };
+      if (activeSession && openF1Token) {
         try {
           const [positions, intervals, laps, stints, pits, activeDrivers] = await Promise.all([
             get(`/position?session_key=${activeSession.session_key}`),get(`/intervals?session_key=${activeSession.session_key}`),get(`/laps?session_key=${activeSession.session_key}`),get(`/stints?session_key=${activeSession.session_key}`),get(`/pit?session_key=${activeSession.session_key}`),get(`/drivers?session_key=${activeSession.session_key}`)
