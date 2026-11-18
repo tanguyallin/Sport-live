@@ -1,51 +1,102 @@
-const { api, cached, jsonResponse, league, normalize } = require("./sportsapi");
+const { api, cached, jsonResponse, psgTeam, normalize } = require("./sportsapi");
 
-async function leagueTable(query, predicate) {
-  const competition = await league(query, predicate);
-  const seasons = await cached(`seasons:${competition.id}`, 7 * 24 * 60 * 60 * 1000,
-    () => api(`/leagues/${competition.id}/seasons`));
-  const currentYear = new Date().getUTCFullYear();
-  const season = (Array.isArray(seasons) ? seasons : [])
-    .filter(item => Number(item.startYear) <= currentYear && Number(item.endYear) >= currentYear)
-    .sort((a, b) => Number(b.startYear) - Number(a.startYear))[0]
-    || (Array.isArray(seasons) ? seasons[0] : null);
+async function competitionTable(competition, kind, currentYear) {
+  if (!competition?.id) return null;
 
-  if (!season) return { name: competition.name, rows: [] };
+  const seasons = await cached(
+    `seasons:${competition.id}`,
+    24 * 60 * 60 * 1000,
+    () => api(`/leagues/${competition.id}/seasons`)
+  );
+  const entries = Array.isArray(seasons) ? seasons : [];
+  const season = entries.find(item =>
+    Number(item.startYear) <= currentYear && Number(item.endYear) >= currentYear
+  ) || entries[0];
 
-  const standings = await cached(`standings:${competition.id}:${season.id}`, 30 * 60 * 1000,
-    () => api(`/leagues/${competition.id}/standings?season=${season.id}`));
+  if (!season?.id) {
+    return { name: competition.name, rows: [], error: "Aucune saison disponible dans SportsAPI." };
+  }
 
-  return {
-    name: competition.name,
-    rows: (Array.isArray(standings) ? standings : []).map(row => ({
-      position: row.position,
-      team: row.team?.name || "Équipe",
-      image: row.team?.image || null,
-      played: row.played,
-      wins: row.wins,
-      draws: row.draws,
-      losses: row.losses,
-      for: row.scoresFor,
-      against: row.scoresAgainst,
-      diff: row.scoreDifference,
-      points: row.points
-    }))
-  };
+  try {
+    const standings = await cached(
+      `standings:${competition.id}:${season.id}`,
+      30 * 60 * 1000,
+      () => api(`/leagues/${competition.id}/standings?season=${season.id}`)
+    );
+    return {
+      name: competition.name,
+      rows: (Array.isArray(standings) ? standings : []).map(row => ({
+        position: row.position,
+        team: row.team?.name || "Équipe",
+        image: row.team?.image || null,
+        played: row.played,
+        wins: row.wins,
+        draws: row.draws,
+        losses: row.losses,
+        for: row.scoresFor,
+        against: row.scoresAgainst,
+        diff: row.scoreDifference,
+        points: row.points
+      })),
+      sourceUrl: kind === "ligue1"
+        ? "https://www.lequipe.fr/Football/ligue-1/page-classement-equipes/general"
+        : "https://www.lequipe.fr/Football/ligue-des-champions/page-classement-equipes/general"
+    };
+  } catch (error) {
+    return { name: competition.name, rows: [], error: error.message || "Classement indisponible." };
+  }
 }
 
 exports.handler = async () => {
   try {
-    const [ligue1Result, uclResult] = await Promise.allSettled([
-      leagueTable("Ligue 1", item => normalize(item.name) === "ligue 1"),
-      leagueTable("UEFA Champions League", item => normalize(item.name).includes("uefa champions league"))
+    const team = await psgTeam();
+
+    // Read the competitions attached to PSG instead of relying on a global exact-name search.
+    const leagues = await cached(
+      `team-leagues:${team.id}`,
+      24 * 60 * 60 * 1000,
+      () => api(`/teams/${team.id}/leagues`)
+    );
+    const list = Array.isArray(leagues) ? leagues : [];
+    const ligue1 = list.find(item =>
+      item.sport === "football" && normalize(item.name).startsWith("ligue 1")
+    );
+    const ucl = list.find(item =>
+      item.sport === "football" &&
+      /uefa champions league|champions league|ligue des champions/i.test(normalize(item.name))
+    );
+    const year = new Date().getUTCFullYear();
+
+    const [l1Result, uclResult] = await Promise.all([
+      ligue1
+        ? competitionTable(ligue1, "ligue1", year)
+            .catch(error => ({ name: ligue1.name, rows: [], error: error.message }))
+        : Promise.resolve({
+            name: "Ligue 1",
+            rows: [],
+            error: "La Ligue 1 n’apparaît pas dans les compétitions associées au PSG dans SportsAPI."
+          }),
+      ucl
+        ? competitionTable(ucl, "ucl", year)
+            .catch(error => ({ name: ucl.name, rows: [], error: error.message }))
+        : Promise.resolve({
+            name: "Ligue des Champions",
+            rows: [],
+            error: "La Ligue des Champions n’apparaît pas dans les compétitions associées au PSG dans SportsAPI."
+          })
     ]);
-    const ligue1 = ligue1Result.status === "fulfilled"
-      ? ligue1Result.value
-      : { name: "Ligue 1", rows: [], error: ligue1Result.reason?.message || "Classement indisponible." };
-    const ucl = uclResult.status === "fulfilled"
-      ? uclResult.value
-      : { name: "Ligue des Champions", rows: [], error: uclResult.reason?.message || "Classement indisponible." };
-    return jsonResponse(200, { ligue1, ucl, updatedAt: new Date().toISOString() }, 900);
+
+    return jsonResponse(200, {
+      ligue1: l1Result,
+      ucl: uclResult,
+      updatedAt: new Date().toISOString(),
+      diagnostics: {
+        team: team.name,
+        competitionsFound: list.length,
+        ligue1Found: !!ligue1,
+        uclFound: !!ucl
+      }
+    }, 900);
   } catch (error) {
     console.error("psg-competitions:", error);
     return jsonResponse(error.statusCode || 502, {
