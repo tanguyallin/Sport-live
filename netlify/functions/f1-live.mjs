@@ -59,8 +59,8 @@ export default async () => {
           for(const row of pits)pitCounts.set(Number(row.driver_number),(pitCounts.get(Number(row.driver_number))||0)+1);
           const fmt=v=>v?new Date(v*1000).toISOString().slice(14,23):null;
           const drivers=activeDrivers.map(d=>{const n=Number(d.driver_number),g=gap.get(n),l=lapMap.get(n);return{driverNumber:n,name:d.full_name||d.name_acronym,acronym:d.name_acronym||"",teamColour:d.team_colour||"536273",position:pos.get(n)?.position??null,gap:g?.gap_to_leader==null?(g?.interval==null?"Leader":"+"+Number(g.interval).toFixed(3)+"s"):"+"+Number(g.gap_to_leader).toFixed(3)+"s",lastLap:fmt(l?.last?.lap_duration),bestLap:fmt(l?.best?.lap_duration),tyre:stint.get(n)?.compound||null,pitStops:pitCounts.get(n)||0};}).sort((a,b)=>Number(a.position||99)-Number(b.position||99));
-          liveTiming={active:true,available:drivers.length>0,message:drivers.length?"":"Chronométrage non publié pour cette séance.",sessionName:activeSession.session_name,drivers,updatedAt:new Date().toISOString()};
-        }catch(error){liveTiming={active:true,available:false,message:error.message||"Chronométrage indisponible.",sessionName:activeSession.session_name,drivers:[],updatedAt:new Date().toISOString()};}
+          liveTiming={active:true,refreshable:true,available:drivers.length>0,message:drivers.length?"":"OpenF1 n’a pas renvoyé de données pour cette séance. Vérifie l’accès temps réel de la clé API.",sessionName:activeSession.session_name,drivers,updatedAt:new Date().toISOString()};
+        }catch(error){liveTiming={active:true,refreshable:true,available:false,message:error.message||"Chronométrage indisponible.",sessionName:activeSession.session_name,drivers:[],updatedAt:new Date().toISOString()};}
       }
       const qualifying = nextSessions.find(s => /^qualifying$/i.test(s.session_name || ""));
       const race = nextSessions.find(s => /^race$/i.test(s.session_name || ""));
