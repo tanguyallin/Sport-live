@@ -223,3 +223,5 @@ body{background:radial-gradient(ellipse at 8% 0%,rgba(25,91,87,.28),transparent 
 .search-highlight{outline:2px solid #8be6bd!important;background:rgba(83,224,160,.12)!important;box-shadow:0 0 0 5px rgba(83,224,160,.07)}
 @media(min-width:700px){.search-popover{left:auto;right:max(20px,calc((100vw - 620px)/2));margin:0;width:min(520px,calc(100vw - 40px))}}
 @media(max-width:420px){.search-result-meta{display:none}.welcome h1{font-size:36px}}
+
+.match-center-datetime{margin:10px 0 2px;color:var(--green);font-size:13px;font-weight:700;text-transform:capitalize;letter-spacing:.2px}.match-center-score .match-center-datetime{display:block}
