@@ -37,7 +37,7 @@ exports.handler = async () => {
   try {
     const [ligue1Result, uclResult] = await Promise.allSettled([
       leagueTable("Ligue 1", item => normalize(item.name) === "ligue 1"),
-      leagueTable("Champions League", item => normalize(item.name).includes("champions league"))
+      leagueTable("UEFA Champions League", item => normalize(item.name).includes("uefa champions league"))
     ]);
     const ligue1 = ligue1Result.status === "fulfilled"
       ? ligue1Result.value
