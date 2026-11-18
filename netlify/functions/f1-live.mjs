@@ -46,7 +46,7 @@ export default async () => {
 
       
       const activeSession = nextSessions.find(s => Date.parse(s.date_start) <= now && Date.parse(s.date_end) >= now) || null;
-      let liveTiming = { active: !!activeSession, available: false, message: openF1Key ? "En attente des données de chronométrage." : "Le direct OpenF1 nécessite une clé API avec accès temps réel. Ajoute OPENF1_API_KEY dans les variables Netlify.", sessionName: activeSession?.session_name || null, drivers: [], updatedAt: new Date().toISOString() };
+      let liveTiming = { active: !!activeSession, refreshable: !!activeSession && !!openF1Key, available: false, message: openF1Key ? "En attente des données de chronométrage." : "Le direct OpenF1 nécessite une clé API avec accès temps réel. Ajoute OPENF1_API_KEY dans les variables Netlify.", sessionName: activeSession?.session_name || null, drivers: [], updatedAt: new Date().toISOString() };
       if (activeSession && openF1Key) {
         try {
           const [positions, intervals, laps, stints, pits, activeDrivers] = await Promise.all([
@@ -145,7 +145,7 @@ export default async () => {
   try {
     const payload = await pendingRequest;
     cachedPayload = payload;
-    cacheExpiresAt = Date.now() + (payload.liveTiming?.active ? 15_000 : 10 * 60 * 1000);
+    cacheExpiresAt = Date.now() + (payload.liveTiming?.refreshable ? 15_000 : 10 * 60 * 1000);
     return Response.json(payload, { headers: { "Cache-Control": "public, max-age=300" } });
   } catch (error) {
     return Response.json({ error: "f1_data_error", message: error.message || "Données F1 indisponibles." }, { status: 502 });
