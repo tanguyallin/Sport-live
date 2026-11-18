@@ -53,7 +53,8 @@ export default async () => {
             get(`/position?session_key=${activeSession.session_key}`),get(`/intervals?session_key=${activeSession.session_key}`),get(`/laps?session_key=${activeSession.session_key}`),get(`/stints?session_key=${activeSession.session_key}`),get(`/pit?session_key=${activeSession.session_key}`),get(`/drivers?session_key=${activeSession.session_key}`)
           ]);
           const latestByDriver=rows=>{const map=new Map();for(const row of rows){const k=Number(row.driver_number),old=map.get(k);if(!old||String(row.date||"")>String(old.date||""))map.set(k,row);}return map;};
-          const pos=latestByDriver(positions),gap=latestByDriver(intervals),stint=latestByDriver(stints),lapMap=new Map(),pitCounts=new Map();
+          const pos=latestByDriver(positions),gap=latestByDriver(intervals),stint=new Map(),lapMap=new Map(),pitCounts=new Map();
+          for(const row of stints){const k=Number(row.driver_number),old=stint.get(k);if(!old||Number(row.stint_number)>Number(old.stint_number))stint.set(k,row);}
           for(const row of laps){const k=Number(row.driver_number),old=lapMap.get(k)||{best:null,last:null};if(row.lap_duration&&(!old.best||row.lap_duration<old.best.lap_duration))old.best=row;if(!old.last||Number(row.lap_number)>Number(old.last.lap_number))old.last=row;lapMap.set(k,old);}
           for(const row of pits)pitCounts.set(Number(row.driver_number),(pitCounts.get(Number(row.driver_number))||0)+1);
           const fmt=v=>v?new Date(v*1000).toISOString().slice(14,23):null;
@@ -144,7 +145,7 @@ export default async () => {
   try {
     const payload = await pendingRequest;
     cachedPayload = payload;
-    cacheExpiresAt = Date.now() + 10 * 60 * 1000;
+    cacheExpiresAt = Date.now() + (payload.liveTiming?.active ? 15_000 : 10 * 60 * 1000);
     return Response.json(payload, { headers: { "Cache-Control": "public, max-age=300" } });
   } catch (error) {
     return Response.json({ error: "f1_data_error", message: error.message || "Données F1 indisponibles." }, { status: 502 });
