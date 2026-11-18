@@ -10,8 +10,11 @@ export default async () => {
   if (!pendingRequest) {
     pendingRequest = (async () => {
       const base = "https://api.openf1.org/v1";
+      const openF1Key = process.env.OPENF1_API_KEY;
       const get = async (path) => {
-        const response = await fetch(base + path, { headers: { Accept: "application/json" } });
+        const headers = { Accept: "application/json" };
+        if (openF1Key) headers.Authorization = `Bearer ${openF1Key}`;
+        const response = await fetch(base + path, { headers });
         if (!response.ok) return [];
         const data = await response.json();
         return Array.isArray(data) ? data : [];
@@ -41,6 +44,23 @@ export default async () => {
         get('/drivers?session_key=latest')
       ]);
 
+      
+      const activeSession = nextSessions.find(s => Date.parse(s.date_start) <= now && Date.parse(s.date_end) >= now) || null;
+      let liveTiming = { active: !!activeSession, available: false, message: openF1Key ? "En attente des données de chronométrage." : "Le direct OpenF1 nécessite une clé API avec accès temps réel. Ajoute OPENF1_API_KEY dans les variables Netlify.", sessionName: activeSession?.session_name || null, drivers: [], updatedAt: new Date().toISOString() };
+      if (activeSession && openF1Key) {
+        try {
+          const [positions, intervals, laps, stints, pits, activeDrivers] = await Promise.all([
+            get(`/position?session_key=${activeSession.session_key}`),get(`/intervals?session_key=${activeSession.session_key}`),get(`/laps?session_key=${activeSession.session_key}`),get(`/stints?session_key=${activeSession.session_key}`),get(`/pit?session_key=${activeSession.session_key}`),get(`/drivers?session_key=${activeSession.session_key}`)
+          ]);
+          const latestByDriver=rows=>{const map=new Map();for(const row of rows){const k=Number(row.driver_number),old=map.get(k);if(!old||String(row.date||"")>String(old.date||""))map.set(k,row);}return map;};
+          const pos=latestByDriver(positions),gap=latestByDriver(intervals),stint=latestByDriver(stints),lapMap=new Map(),pitCounts=new Map();
+          for(const row of laps){const k=Number(row.driver_number),old=lapMap.get(k)||{best:null,last:null};if(row.lap_duration&&(!old.best||row.lap_duration<old.best.lap_duration))old.best=row;if(!old.last||Number(row.lap_number)>Number(old.last.lap_number))old.last=row;lapMap.set(k,old);}
+          for(const row of pits)pitCounts.set(Number(row.driver_number),(pitCounts.get(Number(row.driver_number))||0)+1);
+          const fmt=v=>v?new Date(v*1000).toISOString().slice(14,23):null;
+          const drivers=activeDrivers.map(d=>{const n=Number(d.driver_number),g=gap.get(n),l=lapMap.get(n);return{driverNumber:n,name:d.full_name||d.name_acronym,acronym:d.name_acronym||"",teamColour:d.team_colour||"536273",position:pos.get(n)?.position??null,gap:g?.gap_to_leader==null?(g?.interval==null?"Leader":"+"+Number(g.interval).toFixed(3)+"s"):"+"+Number(g.gap_to_leader).toFixed(3)+"s",lastLap:fmt(l?.last?.lap_duration),bestLap:fmt(l?.best?.lap_duration),tyre:stint.get(n)?.compound||null,pitStops:pitCounts.get(n)||0};}).sort((a,b)=>Number(a.position||99)-Number(b.position||99));
+          liveTiming={active:true,available:drivers.length>0,message:drivers.length?"":"Chronométrage non publié pour cette séance.",sessionName:activeSession.session_name,drivers,updatedAt:new Date().toISOString()};
+        }catch(error){liveTiming={active:true,available:false,message:error.message||"Chronométrage indisponible.",sessionName:activeSession.session_name,drivers:[],updatedAt:new Date().toISOString()};}
+      }
       const qualifying = nextSessions.find(s => /^qualifying$/i.test(s.session_name || ""));
       const race = nextSessions.find(s => /^race$/i.test(s.session_name || ""));
       const qualifyingPassed = !!qualifying && Date.parse(qualifying.date_end) <= now;
@@ -107,6 +127,7 @@ export default async () => {
           sessionKey: s.session_key
         })).sort((a, b) => Date.parse(a.start) - Date.parse(b.start)),
         qualifyingPassed,
+        liveTiming,
         grid: mappedGrid,
         gridAvailable: mappedGrid.length > 0,
         drivers: mappedStandings,
