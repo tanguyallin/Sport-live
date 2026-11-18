@@ -138,7 +138,7 @@ export default async () => {
       diagnostics: {
         team: team.name,
         teamCompetitionsFound: teamList.length,
-        frenchCategoryFound: frenchDirectory.categoryFound,
+        frenchDirectoryLoaded: frenchDirectory.directoryLoaded,
         frenchLeaguesFound: frenchDirectory.leaguesCount,
         ligue1Found: !!ligue1,
         uclFound: !!ucl
