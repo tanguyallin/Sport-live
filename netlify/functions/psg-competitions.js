@@ -37,8 +37,7 @@ exports.handler = async () => {
   try {
     const [ligue1, ucl] = await Promise.all([
       leagueTable("Ligue 1", item =>
-        normalize(item.name) === "ligue 1" &&
-        (normalize(item.category).includes("france") || item.country?.code === "FR")
+        normalize(item.name) === "ligue 1"
       ),
       leagueTable("UEFA Champions League", item =>
         normalize(item.name).includes("champions league")
