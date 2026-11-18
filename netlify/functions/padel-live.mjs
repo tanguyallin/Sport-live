@@ -70,7 +70,7 @@ export default async () => {
         live: liveMatches,
         matches,
         checkedAt: new Date().toISOString(),
-        calendarDays: 7
+        calendarDays: 3
       };
     })();
   }
