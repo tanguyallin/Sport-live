@@ -59,6 +59,7 @@ export default async () => {
         homeScore: match.homeScore?.current ?? null,
         awayScore: match.awayScore?.current ?? null,
         status: match.status?.description || match.status?.type || "À venir",
+        statusType: match.status?.type || null,
         league: match.league?.name || "Football",
         round: match.round?.name || (typeof match.round === "string" ? match.round : null),
         startTime: match.startTime || match.start_time || match.date || null
