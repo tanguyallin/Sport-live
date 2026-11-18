@@ -247,7 +247,7 @@ function renderPsgHome(){
  const now=Date.now(),live=Array.isArray(psgLive)?psgLive[0]:null;
  const next=(psgUpcoming||[]).filter(m=>m.startTime&&Date.parse(m.startTime)>=now).sort((a,b)=>Date.parse(a.startTime)-Date.parse(b.startTime))[0];
  const match=live||next;
- if(!match)return '<article class="event"><div class="event-top"><span class="tag">⚽ PARIS SAINT-GERMAIN</span><span class="status">À VENIR</span></div><div class="event-main"><div class="teams">Prochain match du PSG</div><div class="score">—</div></div><div class="event-foot"><span>Calendrier en attente de mise à jour</span></div></article>';
+ if(!match)return `<article class="event"><div class="event-top"><span class="tag">⚽ PARIS SAINT-GERMAIN</span><span class="status">${psgError?'INDISPONIBLE':'À VENIR'}</span></div><div class="event-main"><div class="teams">Prochain match du PSG</div><div class="score">—</div></div><div class="event-foot"><span>${escapeHtml(psgError||'Calendrier en attente de mise à jour')}</span></div></article>`;
  const date=match.startTime?new Date(match.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'En cours';
  return `<article class="event psg-home-card"><div class="event-top"><span class="tag"><span class="psg-competition-flag">${psgCompetitionIcon(match.league)}</span>PSG · ${escapeHtml(match.league||'FOOTBALL')}</span><span class="status">${live?'EN DIRECT':'PROCHAIN MATCH'}</span></div><div class="event-main"><div class="teams">${escapeHtml(match.home||'PSG')}<br>${escapeHtml(match.away||'Adversaire')}</div><div class="score">${match.homeScore??'—'} - ${match.awayScore??'—'}<small>${escapeHtml(match.round||match.status||'')}</small></div></div><div class="event-foot"><span>${date}</span></div></article>`;
 }
@@ -372,13 +372,17 @@ async function loadPsgCompetitions(){
 async function loadPsgLive(){
  try{
   const response=await fetch('/.netlify/functions/psg-live',{cache:'no-store'});
-  const result=await response.json();
-  if(!response.ok) throw new Error(result.message||'Erreur de connexion');
-  psgLive=Array.isArray(result.live)?result.live:[];
-  psgUpcoming=Array.isArray(result.upcoming)?result.upcoming:[];
-  psgRecent=Array.isArray(result.recent)?result.recent:[];
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(result.message||`Erreur PSG (HTTP ${response.status})`);
+  if(!Array.isArray(result.upcoming)||!Array.isArray(result.recent)||!Array.isArray(result.live))throw new Error('Réponse SportsAPI incomplète.');
+  psgLive=result.live;
+  psgUpcoming=result.upcoming;
+  psgRecent=result.recent;
   psgError='';
- }catch(error){psgLive=[];psgUpcoming=[];psgRecent=[];psgError=error.message||'Connexion impossible';}
+ }catch(error){
+  psgError=error.message||'Connexion impossible';
+  console.error('Chargement PSG:',error);
+ }
  render();
 }
 
