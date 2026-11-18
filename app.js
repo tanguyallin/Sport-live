@@ -33,7 +33,7 @@ function render(){
     const league=String(m.league||'').toLowerCase();
     if(psgCompetition==='ligue1')return /ligue 1|ligue 1 mcdonald/i.test(league);
     if(psgCompetition==='ucl')return /champions league|ligue des champions|uefa champions/i.test(league);
-    return /champions league|ligue des champions|uefa champions/i.test(league);
+    return false;
    });
    const card=m=>`<article class="event"><div class="event-top"><span class="tag"><span class="psg-competition-flag">${psgCompetitionIcon(m.league)}</span>${escapeHtml(m.league||'PSG')}</span><span class="status">${escapeHtml(m.status)}</span></div><div class="event-main"><div class="teams">${escapeHtml(m.home)}<br>${escapeHtml(m.away)}</div><div class="score">${m.homeScore ?? '—'} - ${m.awayScore ?? '—'}<small>${escapeHtml(m.round||m.league||'')}</small></div></div><div class="event-foot"><span>${m.startTime?new Date(m.startTime).toLocaleString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Horaire non communiqué'}</span></div></article>`;
    let body='';
