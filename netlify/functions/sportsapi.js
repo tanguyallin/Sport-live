@@ -24,6 +24,19 @@ function jsonResponse(statusCode, body, cacheSeconds = 30) {
 }
 
 async function api(path) {
+  // A shared cooldown prevents every endpoint from retrying while SportsAPI is throttling us.
+  try {
+    const cooldown = await store().get("v1:rate-limit-until", { type: "json", consistency: "strong" });
+    if (cooldown?.until > Date.now()) {
+      const error = new Error("SportsAPI limite temporairement les requêtes. Les données en cache sont utilisées dès que possible.");
+      error.statusCode = 429;
+      throw error;
+    }
+  } catch (error) {
+    if (error.statusCode === 429) throw error;
+    console.warn("Lecture du délai anti-saturation impossible:", error.message);
+  }
+
   const key = process.env.SPORTSAPI_API_KEY;
   if (!key) {
     const error = new Error("La clé SPORTSAPI_API_KEY manque dans les variables d’environnement Netlify.");
@@ -44,6 +57,10 @@ async function api(path) {
     const message = payload?.error?.message || payload?.message || `SportsAPI a répondu HTTP ${response.status}.`;
     const error = new Error(message);
     error.statusCode = response.status === 429 ? 429 : (response.status >= 500 ? 502 : response.status);
+    if (response.status === 429) {
+      try { await store().setJSON("v1:rate-limit-until", { until: Date.now() + 60 * 1000 }); }
+      catch (cacheError) { console.warn("Impossible d'enregistrer le délai anti-saturation:", cacheError.message); }
+    }
     throw error;
   }
   return payload?.data;
