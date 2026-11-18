@@ -236,7 +236,7 @@ body{background:radial-gradient(ellipse at 8% 0%,rgba(25,91,87,.28),transparent 
 .topbar{position:relative;overflow:visible}.topbar:after{content:"";position:absolute;right:105px;top:-34px;width:145px;height:115px;transform:skew(-22deg);border:1px solid rgba(139,230,189,.12);background:repeating-linear-gradient(135deg,transparent 0 12px,rgba(139,230,189,.04) 12px 14px);pointer-events:none;z-index:-1}
 
 /* Motif décoratif du bandeau : ancré au centre-droit, sans décaler les commandes */
-.topbar{position:relative;isolation:isolate;overflow:hidden}
+.topbar{position:relative;isolation:isolate;overflow:visible}
 .topbar:after{content:"";position:absolute;right:76px;top:0;width:124px;height:100%;transform:skew(-18deg);border-left:1px solid rgba(139,230,189,.12);border-right:1px solid rgba(139,230,189,.08);background:repeating-linear-gradient(135deg,transparent 0 12px,rgba(139,230,189,.045) 12px 14px);clip-path:none;pointer-events:none;z-index:0}
 .topbar .brand,.topbar .topbar-actions{position:relative;z-index:1}
 
