@@ -30,7 +30,7 @@ function render(){
    if(filter==='all') return renderPsgHome();
    const tabs=[['ligue1','LIGUE 1'],['ucl','LIGUE DES CHAMPIONS'],['cdf','COUPE DE FRANCE']];
    const nav=`<div class="f1-tabs psg-competition-tabs"><button data-psg-effectif="1" class="${psgSquadView?'active':''}">EFFECTIF</button><button data-psg-competition="all" class="${!psgSquadView&&psgCompetition==='all'?'active':''}">MATCH À VENIR</button>${tabs.map(([id,label])=>`<button data-psg-competition="${id}" class="${!psgSquadView&&psgCompetition===id?'active':''}">${label}</button>`).join('')}</div>`;
-   const all=[...psgUpcoming].filter((m,i,a)=>a.findIndex(v=>String(v.id)===String(m.id))===i);
+   const all=[...psgLive,...psgUpcoming].filter((m,i,a)=>a.findIndex(v=>String(v.id)===String(m.id))===i);
    const matches=psgSquadView?[]:psgCompetition==='all'?all:[...psgUpcoming,...psgRecent].filter((m,i,a)=>a.findIndex(v=>String(v.id)===String(m.id))===i).filter(m=>{
     const league=String(m.league||'').toLowerCase();
     if(psgCompetition==='ligue1')return /ligue 1|ligue 1 mcdonald/i.test(league);
@@ -48,7 +48,7 @@ function render(){
     body=`<section class="padel-tournament"><header><span class="padel-tournament-kicker">COMPÉTITION À ÉLIMINATION DIRECTE</span><h3>Coupe de France</h3><span class="padel-count">Pas de classement général</span></header><a class="psg-source-link" href="https://www.lequipe.fr/Football/Coupe-de-France/" target="_blank" rel="noopener">Calendrier et résultats sur L’Équipe ↗</a></section>`;
    }
    if(!psgSquadView){
-    if(matches.length)body+='<p class="eyebrow">'+(psgCompetition==='all'?'MATCHS À VENIR':'MATCHS DE LA COMPÉTITION')+'</p>'+matches.sort((a,b)=>String(a.startTime||'').localeCompare(String(b.startTime||''))).map(card).join('');
+    if(matches.length)body+='<p class="eyebrow">'+(psgCompetition==='all'?'MATCH EN COURS · PROCHAIN MATCH':'MATCHS DE LA COMPÉTITION')+'</p>'+matches.sort((a,b)=>String(a.startTime||'').localeCompare(String(b.startTime||''))).map(card).join('');
     else if(psgCompetition!=='cdf')body+='<div class="empty">Aucun match trouvé dans cette compétition pour le moment.</div>';
     if(psgCompetition==='all'&&psgError)body+=`<div class="empty">${escapeHtml(psgError)}</div>`;
    }
