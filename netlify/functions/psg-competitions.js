@@ -2,7 +2,7 @@ const { api, cached, jsonResponse, league, normalize } = require("./sportsapi");
 
 async function leagueTable(query, predicate) {
   const competition = await league(query, predicate);
-  const seasons = await cached(`seasons:${competition.id}`, 12 * 60 * 60 * 1000,
+  const seasons = await cached(`seasons:${competition.id}`, 7 * 24 * 60 * 60 * 1000,
     () => api(`/leagues/${competition.id}/seasons`));
   const currentYear = new Date().getUTCFullYear();
   const season = (Array.isArray(seasons) ? seasons : [])
@@ -12,7 +12,7 @@ async function leagueTable(query, predicate) {
 
   if (!season) return { name: competition.name, rows: [] };
 
-  const standings = await cached(`standings:${competition.id}:${season.id}`, 15 * 60 * 1000,
+  const standings = await cached(`standings:${competition.id}:${season.id}`, 30 * 60 * 1000,
     () => api(`/leagues/${competition.id}/standings?season=${season.id}`));
 
   return {
