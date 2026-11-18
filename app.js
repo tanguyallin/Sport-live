@@ -61,6 +61,8 @@ function render(){
  document.querySelectorAll('[data-padel-gender]').forEach(b=>b.addEventListener('click',()=>{padelGender=b.dataset.padelGender;render()}));
  document.querySelectorAll('[data-f1-view]').forEach(b=>b.addEventListener('click',()=>{f1View=b.dataset.f1View;render()}));
  document.querySelectorAll('[data-f1-standing]').forEach(b=>b.addEventListener('click',()=>{f1StandingMode=b.dataset.f1Standing;render()}));
+ window.SportLiveData=()=>({psgSquad:psgSquad||[],psgUpcoming:psgUpcoming||[],psgRecent:psgRecent||[],padelMatches:padelData?.matches||[],padelRankings:padelRankings||{},f1Drivers:f1Data?.drivers?.length?f1Data.drivers:f1FallbackDrivers,news:newsItems||[]});
+ if(window.renderSportExtras)window.renderSportExtras();
 }
 
 const padelAnnualEvents=[
