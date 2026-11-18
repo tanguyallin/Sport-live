@@ -47,10 +47,13 @@ export default async () => {
         get("https://api.sportsapi.app/v2/livescores?sport=football")
       ]);
 
-      const isPsg = match =>
-        [match.home?.name, match.away?.name].some(name =>
-          /paris saint-germain|paris sg|^psg$/i.test(String(name || ""))
-        );
+      const isPsg = match => {
+        const teams = [match.home?.name, match.away?.name].map(name => String(name || ""));
+        const competition = String(match.league?.name || "");
+        const women = /women|woman|fémin|feminin|female|ladies|arkema|d1\s*f/i;
+        if (women.test(teams.join(" ") + " " + competition)) return false;
+        return teams.some(name => /paris saint-germain|paris sg|^psg$/i.test(name));
+      };
 
       const mapMatch = match => ({
         id: match.id,
@@ -67,7 +70,7 @@ export default async () => {
 
       const payload = {
         live: (Array.isArray(live) ? live : []).filter(isPsg).map(mapMatch),
-        upcoming: (Array.isArray(upcoming) ? upcoming : []).map(mapMatch),
+        upcoming: (Array.isArray(upcoming) ? upcoming : []).filter(isPsg).map(mapMatch),
         recent: [],
         checkedAt: new Date().toISOString(),
         diagnostics: {
