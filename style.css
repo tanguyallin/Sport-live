@@ -181,3 +181,45 @@ main>.sports .sport{flex:1;text-align:center;min-width:0;padding:11px 7px}
 .padel-tournament-open{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:12px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);color:var(--text);font-size:10px;font-weight:850}.padel-bracket-round{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}.padel-bracket-round h4{font-size:11px;margin:0 0 9px;color:#8fe1c4}.padel-bracket-match{display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:10px}.padel-bracket-match b{font-weight:800}.padel-bracket-match small{color:var(--muted);text-align:right}
 .f1-timing-wrap{display:grid;gap:8px}.f1-timing-note{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:10px;color:var(--muted);line-height:1.5}.f1-timing-table{width:100%;border-collapse:collapse;font-size:10px}.f1-timing-table th{padding:8px 5px;color:var(--muted);font-size:8px;text-align:right;white-space:nowrap}.f1-timing-table th:nth-child(2),.f1-timing-table td:nth-child(2){text-align:left}.f1-timing-table td{padding:9px 5px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}.f1-timing-driver{display:flex;align-items:center;gap:7px;font-weight:850}.f1-timing-driver i{width:3px;height:20px;border-radius:3px;display:inline-block}.f1-timing-tyre{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;border:1px solid currentColor;font-size:8px;font-weight:900}.f1-timing-updated{font-size:9px;color:var(--muted);text-align:right}
 @media(min-width:760px){.dashboard-cards{grid-template-columns:repeat(2,minmax(0,1fr));max-width:900px;margin:auto}.dashboard-overview{max-width:900px;margin-left:auto;margin-right:auto}.dashboard-section-title{max-width:900px;margin-left:auto;margin-right:auto}.psg-match-center{max-width:720px;margin:auto}}
+
+/* SPORT LIVE · identité plus énergique */
+:root{--green:#8be6bd;--blue:#69b7ff;--red:#ff685f;--bg:#090f18;--panel:#141f2b;--panel2:#1d2b39;--line:#2b3b4d}
+body{background:radial-gradient(ellipse at 8% 0%,rgba(25,91,87,.28),transparent 32%),radial-gradient(ellipse at 100% 15%,rgba(27,76,122,.22),transparent 34%),#090f18}
+.topbar{position:relative;z-index:30;height:76px;background:rgba(9,15,24,.86);backdrop-filter:blur(18px);border-bottom:1px solid rgba(139,230,189,.12)}
+.brand-mark{background:linear-gradient(145deg,#a2f4d0,#47b98d);box-shadow:0 0 22px rgba(83,224,160,.22);font-style:italic}
+.brand b{letter-spacing:1.8px}.brand small{display:block;font-size:8px;letter-spacing:2px;color:#8196a8;font-weight:800;margin-top:3px}
+.topbar-actions{display:flex;align-items:center;gap:9px}.search-toggle{font-size:23px;line-height:1;color:#a4f0ce;border-color:rgba(139,230,189,.3);background:linear-gradient(145deg,#1a2b38,#111b26)}
+.welcome{position:relative;overflow:hidden;padding-top:32px;padding-bottom:27px}
+.welcome:after{content:"";position:absolute;right:-35px;top:-34px;width:190px;height:150px;transform:skew(-22deg);border:1px solid rgba(139,230,189,.15);background:repeating-linear-gradient(135deg,transparent 0 13px,rgba(139,230,189,.045) 13px 15px);pointer-events:none}
+.welcome h1{font-size:clamp(36px,8vw,48px);font-weight:950;letter-spacing:-2px}
+.welcome h1 em{color:#8be6bd;text-shadow:0 0 25px rgba(83,224,160,.22)}
+.eyebrow{color:#8be6bd}
+.sport.active,.padel-tabs button.active,.padel-gender button.active,.f1-tabs button.active{background:linear-gradient(120deg,#a2f4d0,#61d7a7);border-color:#8be6bd;color:#081710;box-shadow:0 5px 18px rgba(83,224,160,.15)}
+.event,.padel-tournament,.match-center-section{box-shadow:0 12px 30px rgba(0,0,0,.16)}
+.event{border-color:rgba(139,230,189,.13);background:linear-gradient(135deg,rgba(28,43,57,.98),rgba(16,25,36,.98))}
+.event:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 4px 4px 0;background:linear-gradient(#8be6bd,rgba(105,183,255,.2))}
+.status{border:1px solid rgba(255,255,255,.06)}
+.dashboard-overview{position:relative;overflow:hidden;background:linear-gradient(115deg,#143a39 0%,#172c3c 58%,#1d2639 100%);border-color:rgba(139,230,189,.2)}
+.dashboard-overview:after{content:"";position:absolute;right:-45px;bottom:-80px;width:210px;height:210px;border:1px solid rgba(139,230,189,.15);border-radius:50%;box-shadow:0 0 0 18px rgba(139,230,189,.025),0 0 0 38px rgba(139,230,189,.02)}
+.dashboard-live-count{position:relative;z-index:1}
+.search-popover{position:absolute;top:calc(100% + 8px);left:12px;right:12px;max-width:560px;margin:auto;padding:10px;border:1px solid rgba(139,230,189,.25);border-radius:17px;background:rgba(13,22,32,.98);box-shadow:0 22px 60px rgba(0,0,0,.55);backdrop-filter:blur(20px);z-index:50}
+.search-popover[hidden]{display:none}
+.search-input-wrap{display:flex;align-items:center;gap:9px;padding:0 10px;border:1px solid #34495b;border-radius:12px;background:#101b27}
+.search-input-wrap>span{font-size:22px;color:#8be6bd}
+.search-input-wrap input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#f4f7fb;padding:13px 0;font-size:14px}
+.search-input-wrap input::placeholder{color:#8191a1}
+.search-input-wrap button{border:0;background:transparent;color:#aab8c6;font-size:23px;padding:3px 5px}
+.search-results{max-height:min(60vh,430px);overflow:auto;padding-top:7px}
+.search-hint{margin:8px 7px 5px;color:#8b9bac;font-size:11px;line-height:1.5}
+.search-result{width:100%;display:flex;align-items:center;gap:10px;padding:11px 8px;border:0;border-bottom:1px solid rgba(255,255,255,.06);background:transparent;color:#f4f7fb;text-align:left}
+.search-result:last-child{border-bottom:0}
+.search-result:active{background:#1c2d3b}
+.search-result-icon{width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;border-radius:10px;background:#213545;font-size:15px}
+.search-result-copy{display:grid;gap:3px;min-width:0;flex:1}
+.search-result-copy b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-result-copy small,.search-result-meta{font-size:9px;color:#91a2b3}
+.search-result-meta{max-width:86px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-result-arrow{font-size:20px;color:#8be6bd}
+.search-highlight{outline:2px solid #8be6bd!important;background:rgba(83,224,160,.12)!important;box-shadow:0 0 0 5px rgba(83,224,160,.07)}
+@media(min-width:700px){.search-popover{left:auto;right:max(20px,calc((100vw - 620px)/2));margin:0;width:min(520px,calc(100vw - 40px))}}
+@media(max-width:420px){.search-result-meta{display:none}.welcome h1{font-size:36px}}
