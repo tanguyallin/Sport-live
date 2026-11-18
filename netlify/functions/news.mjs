@@ -30,6 +30,9 @@ function parseFeed(xml,source){
   const date=tag(block,"pubDate")||tag(block,"published")||tag(block,"updated")||tag(block,"dc:date");
   const raw=tag(block,"description")||tag(block,"summary")||tag(block,"content:encoded");
   const description=cleanText(raw);
+  const editorialText=title+" "+description;
+  if(source.sport==="f1"&&/\bmoto\s?gp\b|motogp|motorcycle grand prix|grand prix moto/i.test(editorialText))return null;
+  if(source.sport==="psg"&&/\bwomen\b|\bféminines?\b|\bfeminin\b|\bfemale\b|\bladies\b|arkema|d1\s*f[ée]minine/i.test(editorialText))return null;
   const image=block.match(/<media:content[^>]+url=["']([^"']+)/i)?.[1]||block.match(/<enclosure[^>]+url=["']([^"']+)/i)?.[1]||raw.match(/<img[^>]+src=["']([^"']+)/i)?.[1]||null;
   return {sport:source.sport,source:source.name,title:cleanText(title),url,date:date&&Number.isFinite(Date.parse(date))?new Date(date).toISOString():null,description,image};
  }).filter(a=>a.title&&/^https?:\/\//i.test(a.url||"")&&source.match.test(a.title+" "+a.description));
