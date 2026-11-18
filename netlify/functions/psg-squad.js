@@ -3,7 +3,7 @@ const { api, cached, jsonResponse, psgTeam } = require("./sportsapi");
 exports.handler = async () => {
   try {
     const team = await psgTeam();
-    const squad = await cached("psg:squad", 6 * 60 * 60 * 1000, () => api(`/teams/${team.id}/squad`));
+    const squad = await cached("psg:squad", 24 * 60 * 60 * 1000, () => api(`/teams/${team.id}/squad`));
     const players = (Array.isArray(squad) ? squad : []).map(player => ({
       id: player.id,
       name: player.name,
