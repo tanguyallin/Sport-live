@@ -26,8 +26,8 @@ export default async () => {
         return d.toISOString().slice(0, 10);
       };
 
-      // One date request per day, limited to the next week to respect the API rate cap.
-      const fixtureRequests = Array.from({ length: 7 }, (_, offset) =>
+      // Limit the live window to three days to keep the combined SportAPI usage below its rate cap.
+      const fixtureRequests = Array.from({ length: 3 }, (_, offset) =>
         get(`https://api.sportsapi.app/v2/fixtures?date=${dateAt(offset)}&sport=padel&page=0`)
       );
 
