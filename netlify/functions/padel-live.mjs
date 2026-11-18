@@ -4,7 +4,7 @@ let pendingRequest = null;
 
 export default async () => {
   if (cachedPayload && Date.now() < cacheExpiresAt) {
-    return Response.json(cachedPayload, { headers: { "Cache-Control": "public, max-age=300" } });
+    return Response.json(cachedPayload, { headers: { "Cache-Control": "public, max-age=" + (cachedPayload.live?.length ? 30 : 300) } });
   }
 
   if (!pendingRequest) {
@@ -31,10 +31,7 @@ export default async () => {
         get(`https://api.sportsapi.app/v2/fixtures?date=${dateAt(offset)}&sport=padel&page=0`)
       );
 
-      const [live, ...dailyFixtures] = await Promise.all([
-        get("https://api.sportsapi.app/v2/livescores?sport=padel"),
-        ...fixtureRequests
-      ]);
+      const dailyFixtures = await Promise.all(fixtureRequests);
 
       const mapMatch = (m) => ({
         id: m.id,
@@ -57,7 +54,7 @@ export default async () => {
       });
 
       const byId = new Map();
-      for (const group of [...dailyFixtures, Array.isArray(live) ? live : []]) {
+      for (const group of dailyFixtures) {
         for (const m of (Array.isArray(group) ? group : [])) {
           if (m?.id != null) byId.set(m.id, mapMatch(m));
         }
@@ -67,7 +64,7 @@ export default async () => {
       const matches = [...byId.values()]
         .filter(isTargetTournament)
         .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
-      const liveMatches = (Array.isArray(live) ? live : []).map(mapMatch).filter(isTargetTournament);
+      const liveMatches = matches.filter(m => /live|in.?progress|playing|period|half/i.test(String(m.statusType || "")));
 
       return {
         live: liveMatches,
@@ -81,8 +78,8 @@ export default async () => {
   try {
     const payload = await pendingRequest;
     cachedPayload = payload;
-    cacheExpiresAt = Date.now() + 10 * 60 * 1000;
-    return Response.json(payload, { headers: { "Cache-Control": "public, max-age=300" } });
+    cacheExpiresAt = Date.now() + (payload.live.length ? 30_000 : 10 * 60 * 1000);
+    return Response.json(payload, { headers: { "Cache-Control": "public, max-age=" + (payload.live.length ? 30 : 300) } });
   } catch (error) {
     return Response.json({ error: "sportsapi_error", message: error.message || "Erreur SportsAPI." }, { status: 502 });
   } finally {
