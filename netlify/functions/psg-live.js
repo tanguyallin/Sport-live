@@ -4,7 +4,7 @@ exports.handler = async () => {
   try {
     const team = await psgTeam();
     const [upcoming, recent] = await Promise.all([
-      cached("psg:upcoming", 60 * 1000, () => api(`/teams/${team.id}/fixtures?type=upcoming&page=0`)),
+      cached("psg:upcoming", 5 * 60 * 1000, () => api(`/teams/${team.id}/fixtures?type=upcoming&page=0`)),
       cached("psg:recent", 60 * 1000, () => api(`/teams/${team.id}/fixtures?type=recent&page=0`))
     ]);
 
@@ -17,7 +17,7 @@ exports.handler = async () => {
       upcoming: upcomingRows,
       recent: recentRows,
       updatedAt: new Date().toISOString()
-    }, 30);
+    }, 60);
   } catch (error) {
     console.error("psg-live:", error);
     return jsonResponse(error.statusCode || 502, {
