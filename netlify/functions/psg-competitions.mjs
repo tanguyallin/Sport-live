@@ -36,6 +36,30 @@ const mapRows = data => (Array.isArray(data) ? data : []).map(row => ({
   points: row.points ?? null
 }));
 
+async function findFrenchLeague(headers) {
+  const categories = await json("/categories?sport=football", headers);
+  const france = (Array.isArray(categories) ? categories : []).find(item =>
+    item.sport === "football" &&
+    (item.country?.code === "FR" || normalize(item.name) === "france")
+  );
+  if (!france?.id) {
+    return { competition: null, categoryFound: false, leaguesCount: 0 };
+  }
+
+  const leagues = await json(`/leagues?category=${france.id}`, headers);
+  const list = Array.isArray(leagues) ? leagues : [];
+  const competition = list.find(item =>
+    item.sport === "football" &&
+    normalize(item.name).startsWith("ligue 1") &&
+    (!item.slug || normalize(item.slug).startsWith("ligue-1"))
+  ) || list.find(item =>
+    item.sport === "football" &&
+    normalize(item.slug).startsWith("ligue-1")
+  );
+
+  return { competition: competition || null, categoryFound: true, leaguesCount: list.length };
+}
+
 async function tableForCompetition(competition, headers, currentYear) {
   if (!competition?.id) return null;
   const seasons = await json(`/leagues/${competition.id}/seasons`, headers);
@@ -83,29 +107,37 @@ export default async () => {
     );
     if (!team?.id) throw new Error("Club PSG masculin introuvable dans SportsAPI.");
 
-    // Use the team's own competition list instead of a fragile global name search.
     const teamLeagues = await json(`/teams/${team.id}/leagues`, headers);
-    const leagues = Array.isArray(teamLeagues) ? teamLeagues : [];
-    const ligue1 = leagues.find(item =>
-      item.sport === "football" && /^ligue\s*1(?:\b|\s)/i.test(normalize(item.name))
-    ) || leagues.find(item =>
-      item.sport === "football" && normalize(item.name).startsWith("ligue 1")
-    );
-    const ucl = leagues.find(item =>
+    const teamList = Array.isArray(teamLeagues) ? teamLeagues : [];
+    const ucl = teamList.find(item =>
       item.sport === "football" &&
       /uefa champions league|champions league|ligue des champions/i.test(normalize(item.name))
     );
 
+    // Discover Ligue 1 from the French football directory, not from the PSG list.
+    const frenchDirectory = await findFrenchLeague(headers);
+    const ligue1 = frenchDirectory.competition;
     const year = new Date().getUTCFullYear();
+
     const [l1Table, uclTable] = await Promise.all([
       ligue1
         ? tableForCompetition({ ...ligue1, kind: "ligue1" }, headers, year)
             .catch(error => ({ name: ligue1.name, rows: [], error: error.message }))
-        : Promise.resolve({ name: "Ligue 1", rows: [], error: "La Ligue 1 n’apparaît pas dans les compétitions associées au PSG dans SportsAPI." }),
+        : Promise.resolve({
+            name: "Ligue 1",
+            rows: [],
+            error: frenchDirectory.categoryFound
+              ? "La Ligue 1 n’a pas été trouvée dans le répertoire des compétitions françaises de SportsAPI."
+              : "Le répertoire des compétitions françaises est indisponible dans SportsAPI."
+          }),
       ucl
         ? tableForCompetition({ ...ucl, kind: "ucl" }, headers, year)
             .catch(error => ({ name: ucl.name, rows: [], error: error.message }))
-        : Promise.resolve({ name: "Ligue des Champions", rows: [], error: "La Ligue des Champions n’apparaît pas dans les compétitions associées au PSG dans SportsAPI." })
+        : Promise.resolve({
+            name: "Ligue des Champions",
+            rows: [],
+            error: "La Ligue des Champions n’apparaît pas dans les compétitions associées au PSG dans SportsAPI."
+          })
     ]);
 
     return {
@@ -114,7 +146,9 @@ export default async () => {
       checkedAt: new Date().toISOString(),
       diagnostics: {
         team: team.name,
-        competitionsFound: leagues.length,
+        teamCompetitionsFound: teamList.length,
+        frenchCategoryFound: frenchDirectory.categoryFound,
+        frenchLeaguesFound: frenchDirectory.leaguesCount,
         ligue1Found: !!ligue1,
         uclFound: !!ucl
       }
@@ -124,8 +158,8 @@ export default async () => {
   try {
     const data = await pending;
     cachedPayload = data;
-    cacheExpiresAt = Date.now() + 6 * 60 * 60 * 1000;
-    return Response.json(data, { headers: { "Cache-Control": "public, max-age=3600" } });
+    cacheExpiresAt = Date.now() + 30 * 60 * 1000;
+    return Response.json(data, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return Response.json({
       error: "psg_competitions_error",
