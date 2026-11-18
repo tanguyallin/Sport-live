@@ -50,6 +50,8 @@ export default async () => {
         statusType: m.status?.type || "scheduled",
         league: m.league?.name || "",
         tournament: m.league?.name || "Tournoi non renseigné",
+        leagueId: m.league?.id || null,
+        round: m.round?.name || (typeof m.round === "string" ? m.round : null),
         gender: m.league?.gender || m.home?.gender || null,
         startTime: m.startTime || null
       });
