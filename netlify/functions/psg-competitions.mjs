@@ -5,7 +5,7 @@ let pending = null;
 const API = "https://api.sportsapi.app/v2";
 const normalize = value => String(value || "")
   .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
+  .replace(/[\\u0300-\\u036f]/g, "")
   .toLowerCase()
   .trim();
 
@@ -36,29 +36,19 @@ const mapRows = data => (Array.isArray(data) ? data : []).map(row => ({
   points: row.points ?? null
 }));
 
-async function findFrenchLeague(headers) {
-  const leagues = await json("/leagues?sport=football&country=FR", headers);
-  const list = Array.isArray(leagues) ? leagues : [];
-  const competition = list.find(item =>
-    item.sport === "football" &&
-    normalize(item.name).startsWith("ligue 1") &&
-    (!item.slug || normalize(item.slug).startsWith("ligue-1"))
-  ) || list.find(item =>
-    item.sport === "football" &&
-    normalize(item.slug).startsWith("ligue-1")
-  );
-
-  return { competition: competition || null, directoryLoaded: true, leaguesCount: list.length };
+function pickSeason(seasons, year) {
+  const list = Array.isArray(seasons) ? seasons : [];
+  return list.find(item =>
+    Number(item.startYear) <= year && Number(item.endYear) >= year
+  ) || list.find(item => item?.id) || null;
 }
 
-async function tableForCompetition(competition, headers, currentYear) {
-  if (!competition?.id) return null;
-  const seasons = await json(`/leagues/${competition.id}/seasons`, headers);
-  const entries = Array.isArray(seasons) ? seasons : [];
-  const season = entries.find(item =>
-    Number(item.startYear) <= currentYear && Number(item.endYear) >= currentYear
-  ) || entries[0];
-
+async function tableForEntry(entry, kind, headers, year) {
+  const competition = entry?.league;
+  const season = pickSeason(entry?.seasons, year);
+  if (!competition?.id) {
+    return { name: kind === "ligue1" ? "Ligue 1" : "Ligue des Champions", rows: [], error: "Compétition sans identifiant dans SportsAPI." };
+  }
   if (!season?.id) {
     return { name: competition.name, rows: [], error: "Aucune saison disponible dans SportsAPI." };
   }
@@ -71,7 +61,7 @@ async function tableForCompetition(competition, headers, currentYear) {
     return {
       name: competition.name,
       rows: mapRows(standings),
-      sourceUrl: competition.kind === "ligue1"
+      sourceUrl: kind === "ligue1"
         ? "https://www.lequipe.fr/Football/ligue-1/page-classement-equipes/general"
         : "https://www.lequipe.fr/Football/ligue-des-champions/page-classement-equipes/general"
     };
@@ -98,50 +88,41 @@ export default async () => {
     );
     if (!team?.id) throw new Error("Club PSG masculin introuvable dans SportsAPI.");
 
-    const teamLeagues = await json(`/teams/${team.id}/leagues`, headers);
-    const teamList = Array.isArray(teamLeagues) ? teamLeagues : [];
-    const ucl = teamList.find(item =>
-      item.sport === "football" &&
-      /uefa champions league|champions league|ligue des champions/i.test(normalize(item.name))
+    // Use the same team standings/seasons endpoint that powered the original version.
+    const entries = await json(`/teams/${team.id}/standings/seasons`, headers);
+    const list = Array.isArray(entries) ? entries : [];
+    const ligue1Entry = list.find(item => /ligue\\s*1/i.test(item?.league?.name || ""));
+    const uclEntry = list.find(item =>
+      /champions league|ligue des champions/i.test(item?.league?.name || "")
     );
-
-    // Discover Ligue 1 from the French football directory, not from the PSG list.
-    const frenchDirectory = await findFrenchLeague(headers);
-    const ligue1 = frenchDirectory.competition;
     const year = new Date().getUTCFullYear();
 
-    const [l1Table, uclTable] = await Promise.all([
-      ligue1
-        ? tableForCompetition({ ...ligue1, kind: "ligue1" }, headers, year)
-            .catch(error => ({ name: ligue1.name, rows: [], error: error.message }))
+    const [ligue1, ucl] = await Promise.all([
+      ligue1Entry
+        ? tableForEntry(ligue1Entry, "ligue1", headers, year)
         : Promise.resolve({
             name: "Ligue 1",
             rows: [],
-            error: frenchDirectory.directoryLoaded
-              ? "La Ligue 1 n’a pas été trouvée dans le répertoire des compétitions françaises de SportsAPI."
-              : "Le répertoire des compétitions françaises est indisponible dans SportsAPI."
+            error: "La Ligue 1 n’apparaît pas dans les saisons de classement associées au PSG dans SportsAPI."
           }),
-      ucl
-        ? tableForCompetition({ ...ucl, kind: "ucl" }, headers, year)
-            .catch(error => ({ name: ucl.name, rows: [], error: error.message }))
+      uclEntry
+        ? tableForEntry(uclEntry, "ucl", headers, year)
         : Promise.resolve({
             name: "Ligue des Champions",
             rows: [],
-            error: "La Ligue des Champions n’apparaît pas dans les compétitions associées au PSG dans SportsAPI."
+            error: "La Ligue des Champions n’apparaît pas dans les saisons de classement associées au PSG dans SportsAPI."
           })
     ]);
 
     return {
-      ligue1: l1Table,
-      ucl: uclTable,
+      ligue1,
+      ucl,
       checkedAt: new Date().toISOString(),
       diagnostics: {
         team: team.name,
-        teamCompetitionsFound: teamList.length,
-        frenchDirectoryLoaded: frenchDirectory.directoryLoaded,
-        frenchLeaguesFound: frenchDirectory.leaguesCount,
-        ligue1Found: !!ligue1,
-        uclFound: !!ucl
+        teamCompetitionsFound: list.length,
+        ligue1Found: !!ligue1Entry,
+        uclFound: !!uclEntry
       }
     };
   })();
